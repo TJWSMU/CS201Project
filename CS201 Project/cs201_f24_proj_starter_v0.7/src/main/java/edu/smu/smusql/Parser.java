@@ -70,7 +70,7 @@ public class Parser {
     }
 
     // Helper method to extract content inside parentheses
-    private String queryBetweenParentheses(String[] tokens, int startIndex) {
+    static String queryBetweenParentheses(String[] tokens, int startIndex) {
         StringBuilder result = new StringBuilder();
         for (int i = startIndex; i < tokens.length; i++) {
             result.append(tokens[i]).append(" ");
