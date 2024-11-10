@@ -56,13 +56,57 @@ public class Engine {
 
         return "Row inserted into table " + tableName;
     }
+
     public String delete(String[] tokens) {
-        //TODO
-        return "not implemented";
+        // Check for correct syntax
+        if (!tokens[1].toUpperCase().equals("FROM") || !tokens[3].toUpperCase().equals("WHERE")) {
+            return "ERROR: Invalid DELETE syntax";
+        }
+    
+        String tableName = tokens[2];
+        BinarySearchTree table = tableList.get(tableName);
+    
+        // Return error message if table does not exist
+        if (table == null) {
+            return "ERROR: Table " + tableName + " does not exist";
+        }
+    
+        // If tokens.length == 7, then there is 1 conditional
+        if (tokens.length == 7) {
+            String column1 = tokens[4];
+            String operator1 = tokens[5];
+            String value1 = tokens[6];
+    
+            // Delete the rows that match the condition
+            int rowsDeleted = table.delete(column1, operator1, value1, null, null, null);
+            return rowsDeleted + " rows deleted from table " + tableName;
+    
+        // If tokens.length == 11, then there are 2 conditionals
+        } else if (tokens.length == 11) {
+            String column1 = tokens[4];
+            String operator1 = tokens[5];
+            String value1 = tokens[6];
+            String logic = tokens[7].toUpperCase();
+            String column2 = tokens[8];
+            String operator2 = tokens[9];
+            String value2 = tokens[10];
+    
+            // Delete the rows that match both conditions
+            int rowsDeleted;
+            if (logic.equals("AND")) {
+                rowsDeleted = table.delete(column1, operator1, value1, column2, operator2, value2);
+            } else if (logic.equals("OR")) {
+                rowsDeleted = table.delete(column1, operator1, value1, column2, operator2, value2);
+            } else {
+                return "ERROR: Invalid logical operator";
+            }
+            return rowsDeleted + " rows deleted from table " + tableName;
+        }
+    
+        return "ERROR: Invalid DELETE syntax";
     }
 
     public String select(String[] tokens) {
-        //TODO
         //Check for correct syntax
         if (tokens.length < 4 ||
             !tokens[1].equals("*") ||
