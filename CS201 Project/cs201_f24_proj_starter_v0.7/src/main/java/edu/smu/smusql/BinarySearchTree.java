@@ -259,58 +259,34 @@ public class BinarySearchTree {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        String result = "";
 
         // Append column names separated by a tab
         if (columnNames != null && columnNames.length > 0) {
             for (int i = 0; i < columnNames.length; i++) {
-                sb.append(columnNames[i]);
+                result += columnNames[i];
                 if (i < columnNames.length - 1) {
-                    sb.append("\t");
+                    result += "\t";
                 }
             }
-            sb.append("\n");
+            result += "\n";
         }
 
         // Append the data from the tree
-        toStringRec(root, sb);
-        return sb.toString();
+        result = toStringRec(root, result);
+        return result;
     }
 
-    private void toStringRec(Node node, StringBuilder sb) {
+    private String toStringRec(Node node, String result) {
         if (node != null) {
-            toStringRec(node.left, sb);
-            sb.append(String.join("\t", node.data)).append("\n");
-            toStringRec(node.right, sb);
+            result = toStringRec(node.left, result);
+            result += String.join("\t", node.data) + "\n";
+            result = toStringRec(node.right, result);
         }
+        return result;
     }
 
     public static void main(String[] args) {
-        BinarySearchTree tree = new BinarySearchTree(new String[]{"Column1", "Column2"});
-
-        tree.insert(new String[]{"apple", "fruit"});
-        tree.insert(new String[]{"banana", "fruit"});
-        tree.insert(new String[]{"carrot", "vegetable"});
-
-        System.out.println("Search and print equals results:");
-        System.out.println(tree.searchAndPrintEquals(0, "apple"));
-
-        System.out.println("Search and print less than results:");
-        System.out.println(tree.searchAndPrintLessThan(0, "carrot"));
-
-        System.out.println("Search and print less than or equal results:");
-        System.out.println(tree.searchAndPrintLessThanOrEqual(0, "banana"));
-
-        System.out.println("Search and print more than results:");
-        System.out.println(tree.searchAndPrintMoreThan(0, "banana"));
-
-        System.out.println("Search and print more than or equal results:");
-        System.out.println(tree.searchAndPrintMoreThanOrEqual(0, "banana"));
-
-        System.out.println("Search and print AND results:");
-        System.out.println(tree.searchAndPrintAnd(0, "=", "apple", 1, "=", "fruit"));
-
-        System.out.println("Search and print OR results:");
-        System.out.println(tree.searchAndPrintOr(0, "=", "apple", 1, "=", "vegetable"));
+        
     }
 }

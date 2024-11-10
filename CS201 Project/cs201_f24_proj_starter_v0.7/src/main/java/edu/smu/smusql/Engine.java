@@ -92,6 +92,10 @@ public class Engine {
             String value = tokens[7];
             //Get the index of the column name
             int index = table.getColumns().get(column);
+            if (value == null) {
+                // Handle the null case, e.g., throw an exception or use a default value
+                throw new NullPointerException("Column" + column + " does not exist.");
+            }
 
             switch (operator) {
                 case "=":
@@ -112,7 +116,7 @@ public class Engine {
             String column1 = tokens[5];
             String operator1 = tokens[6];
             String value1 = tokens[7];
-            String logic = tokens[8];
+            String logic = tokens[8].toUpperCase();
             String column2 = tokens[9];
             String operator2 = tokens[10];
             String value2 = tokens[11];
