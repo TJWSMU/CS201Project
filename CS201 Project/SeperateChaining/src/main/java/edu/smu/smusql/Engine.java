@@ -54,37 +54,35 @@ public class Engine {
         if (!tokens[1].equalsIgnoreCase("INTO")) {
             return "ERROR: Invalid INSERT INTO syntax";
         }
-    
+
         String tableName = tokens[2];
-    
+
         // Retrieve table from ChainHashMap
-        Table tbl = tables.get(tableName);
-        if (tbl == null) {
+        Table table = tables.get(tableName);
+        if (table == null) {
             return "Error: no such table: " + tableName;
         }
-    
+
         String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses
-        System.out.println(valueList);
         List<String> values = Arrays.asList(valueList.split(","));
         values.replaceAll(String::trim);
-    
-        List<String> columns = tbl.getColumns();
-        System.out.println(columns);
+
+        List<String> columns = table.getColumns();
 
         if (values.size() != columns.size()) {
             return "ERROR: Column count doesn't match value count";
         }
-    
+
         // Create a new row using ChainHashMap
         ChainHashMap<String, String> row = new ChainHashMap<>();
         for (int i = 0; i < columns.size(); i++) {
             row.put(columns.get(i), values.get(i));
         }
-    
-        tbl.addRow(row); // Add the new row to the table
-    
-        return "Row inserted into " + tableName;
+
+        // Add the new row using the first column value as the key
+        return table.addRow(row);
     }
+
     
 
     public String select(String[] tokens) {
@@ -95,43 +93,47 @@ public class Engine {
         String tableName = tokens[3];
     
         // Retrieve table from ChainHashMap
-        Table tbl = tables.get(tableName);
-        if (tbl == null) {
+        Table table = tables.get(tableName);
+        if (table == null) {
             return "Error: no such table: " + tableName;
         }
     
-        ChainHashMap<Integer, ChainHashMap<String, String>> tableData = tbl.getRows();
-        List<String> columns = tbl.getColumns();
-    
-        // Initialize whereClauseConditions list
-        List<String[]> whereClauseConditions = new ArrayList<>();
-
-        // Parse WHERE clause conditions
-        if (tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE")) {
-            for (int i = 5; i < tokens.length; i++) {
-                if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
-                    // Add AND/OR conditions
-                    whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-                } else if (isOperator(tokens[i])) {
-                      // Add condition with operator (column, operator, value)
-                    String column = tokens[i - 1];
-                    String operator = tokens[i];
-                    String value = tokens[i + 1];
-                    whereClauseConditions.add(new String[] {null, column, operator, value});
-                    i += 1; // Skip the value since it has been processed
-                }
-            }
-        }
-    
+        List<String> columns = table.getColumns();
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columns)).append("\n"); // Print column headers
     
-        // Iterate over rows using ChainHashMap
-        for (Integer rowId : tableData.keySet()) {
-            ChainHashMap<String, String> row = tableData.get(rowId);
-            boolean match = evaluateWhereConditions(row, whereClauseConditions);
+        List<String[]> whereClauseConditions = new ArrayList<>();
     
-            if (match) {
+        // Parse WHERE clause if present
+        if (tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE")) {
+            whereClauseConditions = parseWhereClause(tokens, 5); // Start parsing after "WHERE"
+    
+            String whereColumn = tokens[5];
+            String whereValue = tokens[7];
+    
+            // Use indexed lookup if condition is on the first column
+            if (whereColumn.equals(columns.get(0))) {
+                ChainHashMap<String, String> row = table.getRowByFirstColumnValue(whereValue);
+                if (row != null) {
+                    for (String column : columns) {
+                        result.append(row.getOrDefault(column, "NULL")).append("\t");
+                    }
+                    result.append("\n");
+                }
+            } else {
+                // Fallback to full table scan if WHERE is on a different column
+                for (ChainHashMap<String, String> row : table.getRows().values()) {
+                    if (evaluateWhereConditions(row, whereClauseConditions)) {
+                        for (String column : columns) {
+                            result.append(row.getOrDefault(column, "NULL")).append("\t");
+                        }
+                        result.append("\n");
+                    }
+                }
+            }
+        } else {
+            // No WHERE clause; retrieve all rows
+            for (ChainHashMap<String, String> row : table.getRows().values()) {
                 for (String column : columns) {
                     result.append(row.getOrDefault(column, "NULL")).append("\t");
                 }
@@ -142,56 +144,51 @@ public class Engine {
         return result.toString();
     }
     
+    
 
     public String update(String[] tokens) {
         String tableName = tokens[1];
     
-        // Retrieve table from ChainHashMap
-        Table tbl = tables.get(tableName);
-        if (tbl == null) {
+        Table table = tables.get(tableName);
+        if (table == null) {
             return "Error: no such table: " + tableName;
         }
     
-        String setColumn = tokens[3]; // column to be updated
-        String newValue = tokens[5]; // new value for above column
+        String setColumn = tokens[3];
+        String newValue = tokens[5];
     
-        List<String> columns = tbl.getColumns();
-        ChainHashMap<Integer, ChainHashMap<String, String>> tableData = tbl.getRows();
-    
-        // Initialize whereClauseConditions list
+        List<String> columns = table.getColumns();
         List<String[]> whereClauseConditions = new ArrayList<>();
-
-        // Parse WHERE clause conditions
+    
+        // Parse WHERE clause if present
         if (tokens.length > 6 && tokens[6].equalsIgnoreCase("WHERE")) {
-            for (int i = 5; i < tokens.length; i++) {
-                if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
-                    // Add AND/OR conditions
-                    whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-                } else if (isOperator(tokens[i])) {
-                    // Add condition with operator (column, operator, value)
-                    String column = tokens[i - 1];
-                    String operator = tokens[i];
-                    String value = tokens[i + 1];
-                    whereClauseConditions.add(new String[] {null, column, operator, value});
-                    i += 1; // Skip the value since it has been processed
-                }
-            }
+            whereClauseConditions = parseWhereClause(tokens, 7); // Start parsing after "WHERE"
         }
     
         int affectedRows = 0;
     
-        for (Integer rowId : tableData.keySet()) {
-            ChainHashMap<String, String> row = tableData.get(rowId);
-            boolean match = evaluateWhereConditions(row, whereClauseConditions);
+        // Check if WHERE clause specifies the first column for optimized lookup
+        if (!whereClauseConditions.isEmpty() && whereClauseConditions.get(0)[1].equals(columns.get(0))) {
+            String key = whereClauseConditions.get(0)[3];
+            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(key);
     
-            if (match) {
+            if (row != null) {
                 row.put(setColumn, newValue);
                 affectedRows++;
+            }
+        } else {
+            // Full table scan if no indexed column specified in WHERE
+            for (ChainHashMap<String, String> row : table.getRows().values()) {
+                if (evaluateWhereConditions(row, whereClauseConditions)) {
+                    row.put(setColumn, newValue);
+                    affectedRows++;
+                }
             }
         }
     
         return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
+    
     
 
     public String delete(String[] tokens) {
@@ -200,55 +197,43 @@ public class Engine {
         }
     
         String tableName = tokens[2];
-    
-        // Retrieve table from ChainHashMap
-        Table tbl = tables.get(tableName);
-        if (tbl == null) {
+        Table table = tables.get(tableName);
+        if (table == null) {
             return "Error: no such table: " + tableName;
         }
     
-        ChainHashMap<Integer, ChainHashMap<String, String>> tableData = tbl.getRows();
-        
-        // Initialize whereClauseConditions list
         List<String[]> whereClauseConditions = new ArrayList<>();
-
-        // Parse WHERE clause conditions
-        if (tokens.length > 3 && tokens[3].toUpperCase().equals("WHERE")) {
-            for (int i = 4; i < tokens.length; i++) {
-                if (tokens[i].toUpperCase().equals("AND") || tokens[i].toUpperCase().equals("OR")) {
-                    // Add AND/OR conditions
-                    whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-                } else if (isOperator(tokens[i])) {
-                    // Add condition with operator (column, operator, value)
-                    String column = tokens[i - 1];
-                    String operator = tokens[i];
-                    String value = tokens[i + 1];
-                    whereClauseConditions.add(new String[] {null, column, operator, value});
-                    i += 1; // Skip the value since it has been processed
-                }
-            }
+        int affectedRows = 0;
+    
+        // Parse WHERE clause if present
+        if (tokens.length > 3 && tokens[3].equalsIgnoreCase("WHERE")) {
+            whereClauseConditions = parseWhereClause(tokens, 4); // Start parsing after "WHERE"
         }
     
-        int affectedRows = 0;
-        List<Integer> rowsToDelete = new ArrayList<>();
-    
-        for (Integer rowId : tableData.keySet()) {
-            ChainHashMap<String, String> row = tableData.get(rowId);
-            boolean match = evaluateWhereConditions(row, whereClauseConditions);
-    
-            if (match) {
-                rowsToDelete.add(rowId);
+        // Check if WHERE clause specifies the first column for optimized lookup
+        if (!whereClauseConditions.isEmpty() && whereClauseConditions.get(0)[1].equals(table.getColumns().get(0))) {
+            String key = whereClauseConditions.get(0)[3];
+            if (table.getRows().remove(key) != null) {
                 affectedRows++;
             }
-        }
-    
-        // Remove matched rows
-        for (Integer rowId : rowsToDelete) {
-            tableData.remove(rowId);
+        } else {
+            // Full table scan if no indexed column specified in WHERE
+            List<String> keysToRemove = new ArrayList<>();
+            for (String key : table.getRows().keySet()) {
+                ChainHashMap<String, String> row = table.getRows().get(key);
+                if (evaluateWhereConditions(row, whereClauseConditions)) {
+                    keysToRemove.add(key);
+                    affectedRows++;
+                }
+            }
+            for (String key : keysToRemove) {
+                table.getRows().remove(key);
+            }
         }
     
         return "Rows deleted from " + tableName + ". " + affectedRows + " rows affected.";
     }
+    
     
 
     
@@ -340,4 +325,24 @@ public class Engine {
 
         return overallMatch;
     }
+
+    private List<String[]> parseWhereClause(String[] tokens, int startIndex) {
+        List<String[]> whereClauseConditions = new ArrayList<>();
+    
+        for (int i = startIndex; i < tokens.length; i++) {
+            if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
+                // Add AND/OR conditions
+                whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
+            } else if (isOperator(tokens[i])) {
+                // Add condition with operator (column, operator, value)
+                String column = tokens[i - 1];
+                String operator = tokens[i];
+                String value = tokens[i + 1];
+                whereClauseConditions.add(new String[] {null, column, operator, value});
+                i += 1; // Skip the value since it has been processed
+            }
+        }
+        return whereClauseConditions;
+    }
+    
 }
