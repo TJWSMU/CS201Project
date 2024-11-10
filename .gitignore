@@ -15,3 +15,11 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# Ignore .DS_Store files
+.DS_Store
+**/.DS_Store
+
+# Ignore .class files
+*.class
+**/*.class
