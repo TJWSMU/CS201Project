@@ -45,7 +45,6 @@ public class Engine {
         Table newTable = new Table(tableName, columns);
     
         tables.put(tableName, newTable); // Use ChainHashMap to store the table
-        System.out.println(columns);
         return "Table " + tableName + " created";
     }
     
