@@ -3,7 +3,7 @@ package edu.smu.smusql;
 import java.util.*;
 
 public class AVLTree {
-    private class Node {
+    public class Node {
         Map<String, String> columnData;
         Node left;
         Node right;
@@ -17,16 +17,24 @@ public class AVLTree {
         }
     }
 
-    private Node root;
-    private List<String> columns;
+    public Node root;
+    public List<String> columns;
 
     public AVLTree(List<String> columns) {
         this.root = null;
         this.columns = columns;
     }
 
+    public Map<String, String> getNodeMap() {
+        return root.columnData;
+    }
+
+    public List<String> getColumns() {
+        return columns;
+    }
+
     // Get height of a node
-    private int getHeight(Node node) {
+    public int getHeight(Node node) {
         if (node == null) {
             return 0;
         }
@@ -35,7 +43,7 @@ public class AVLTree {
     }
 
     // Calculate the balance factor of a node
-    private int getBalanceFactor(Node node) {
+    public int getBalanceFactor(Node node) {
         if (node == null) {
             return 0;
         }
@@ -44,7 +52,7 @@ public class AVLTree {
     }
 
     // Update node height
-    private void updateHeight(Node node) {
+    public void updateHeight(Node node) {
         node.height = 1 + max(getHeight(node.left), getHeight(node.right));
     }
 
@@ -54,7 +62,7 @@ public class AVLTree {
     }
 
     // LL Rotation
-    private Node LLRotate(Node z) {
+    public Node LLRotate(Node z) {
         Node y = z.left;
         Node yRight = y.right;
 
@@ -68,7 +76,7 @@ public class AVLTree {
     }
 
     // LR Rotation
-    private Node LRRotate(Node z) {
+    public Node LRRotate(Node z) {
         Node y = z.left;
         Node x = y.right;
 
@@ -86,7 +94,7 @@ public class AVLTree {
     }
 
     // RR Rotation
-    private Node RRRotate(Node z) {
+    public Node RRRotate(Node z) {
         Node y = z.right;
         Node yLeft = y.left;
 
@@ -100,7 +108,7 @@ public class AVLTree {
     }
 
     // RL Rotation
-    private Node RLRotate(Node z) {
+    public Node RLRotate(Node z) {
         Node y = z.right;
         Node x = y.left;
 
@@ -117,7 +125,7 @@ public class AVLTree {
         return x; 
     }
 
-    private Node balance(Node node) {
+    public Node balance(Node node) {
         int balanceFactor = getBalanceFactor(node);
 
         // Left heavy
@@ -147,7 +155,7 @@ public class AVLTree {
         root = insertRec(root, columnData);
     }
 
-    private Node insertRec(Node node, Map<String, String> columnData) {
+    public Node insertRec(Node node, Map<String, String> columnData) {
         if (node == null) {
             return new Node(columnData);
         }
@@ -177,7 +185,7 @@ public class AVLTree {
         printTreeRec(root, "", true);
     }
 
-    private void printTreeRec(Node node, String prefix, boolean isLeft) {
+    public void printTreeRec(Node node, String prefix, boolean isLeft) {
         if (node == null) return;
 
         System.out.println(prefix + (isLeft ? "├── " : "└── ") + 
