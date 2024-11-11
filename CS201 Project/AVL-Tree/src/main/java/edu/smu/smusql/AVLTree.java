@@ -152,9 +152,10 @@ public class AVLTree {
             return new Node(columnData);
         }
 
-        // Compare using SLL_ID from the Map
-        String newId = columnData.get("id");
-        String currentId = node.columnData.get("id");
+        // Compare using the first column (id) from columns list
+        String idColumn = columns.get(0);
+        String newId = columnData.get(idColumn);
+        String currentId = node.columnData.get(idColumn);
         int comparison = newId.compareTo(currentId);
 
         if (comparison < 0) {
@@ -180,7 +181,7 @@ public class AVLTree {
         if (node == null) return;
 
         System.out.println(prefix + (isLeft ? "├── " : "└── ") + 
-            "ID: " + node.columnData.get("id") + 
+            columns.get(0) + ": " + node.columnData.get(columns.get(0)) + 
             " (BF: " + getBalanceFactor(node) + 
             ", H: " + node.height + ")");
 
