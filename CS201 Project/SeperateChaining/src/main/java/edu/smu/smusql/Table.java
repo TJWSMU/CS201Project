@@ -1,11 +1,13 @@
 package edu.smu.smusql;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class Table {
     private ChainHashMap<String, ChainHashMap<String, String>> rows; // Keyed by the first column value
     private List<String> columns;
     private String name;
+    //private LinkedHashMap<String, ChainHashMap<String, String>> rows;
 
     public Table(String name, List<String> columns) {
         this.name = name;
@@ -23,12 +25,12 @@ public class Table {
 
     // Adds a row indexed by the first column value
     public String addRow(ChainHashMap<String, String> row) {
-        String key = row.get(columns.get(0)); // Use the first column's value as the key
+        String key = row.get(columns.get(0));
         if (rows.containsKey(key)) {
-            return "ERROR: Duplicate entry for key '" + key + "'";
+            return "ERROR: Duplicate key";
         }
-        rows.put(key, row); // Insert row
-        return "Row inserted.";
+        rows.put(key, row);
+        return "Row inserted into " + name;
     }
 
     // Helper method to get the row by the first column value

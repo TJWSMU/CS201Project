@@ -85,7 +85,7 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
     protected abstract V bucketRemove(int h, K k);
 
     /** Resize the table to have given capacity */
-    private void resize(int newCapacity) {
+    protected void resize(int newCapacity) {
         Set<Entry<K, V>> entries = entrySet();
         capacity = newCapacity;
         createTable(); // Create new table with updated capacity

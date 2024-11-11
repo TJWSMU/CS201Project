@@ -1,13 +1,18 @@
 package edu.smu.smusql;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Engine {
     // Stores the tables in the database
     private ChainHashMap<String, Table> tables = new ChainHashMap<>();
 
     public String executeSQL(String query) {
-        String[] tokens = query.trim().split("\\s+");
+        String[] tokens = tokenizeQuery(query);
+        if (tokens.length == 0) {
+            return "ERROR: Empty query";
+        }
         String command = tokens[0].toUpperCase();
 
         switch (command) {
@@ -26,31 +31,46 @@ public class Engine {
         }
     }
 
+    // Tokenizer that handles quoted strings and spaces within values
+    private String[] tokenizeQuery(String query) {
+        List<String> tokensList = new ArrayList<>();
+        Matcher matcher = Pattern.compile("\"([^\"]*)\"|'([^']*)'|\\S+").matcher(query);
+        while (matcher.find()) {
+            if (matcher.group(1) != null) {
+                tokensList.add(matcher.group(1)); // Double-quoted string
+            } else if (matcher.group(2) != null) {
+                tokensList.add(matcher.group(2)); // Single-quoted string
+            } else {
+                tokensList.add(matcher.group());
+            }
+        }
+        return tokensList.toArray(new String[0]);
+    }
+
     public String create(String[] tokens) {
-        if (!tokens[1].equalsIgnoreCase("TABLE")) {
+        if (tokens.length < 4 || !tokens[1].equalsIgnoreCase("TABLE")) {
             return "ERROR: Invalid CREATE TABLE syntax";
         }
-    
+
         String tableName = tokens[2];
-    
+
         // Check if table exists
         if (tables.containsKey(tableName)) {
             return "ERROR: Table already exists";
         }
-    
+
         String columnList = queryBetweenParentheses(tokens, 3); // Get column list between parentheses
         List<String> columns = Arrays.asList(columnList.split(","));
         columns.replaceAll(String::trim);
-    
+
         Table newTable = new Table(tableName, columns);
-    
+
         tables.put(tableName, newTable); // Use ChainHashMap to store the table
         return "Table " + tableName + " created";
     }
-    
 
     public String insert(String[] tokens) {
-        if (!tokens[1].equalsIgnoreCase("INTO")) {
+        if (tokens.length < 5 || !tokens[1].equalsIgnoreCase("INTO")) {
             return "ERROR: Invalid INSERT INTO syntax";
         }
 
@@ -82,10 +102,8 @@ public class Engine {
         return table.addRow(row);
     }
 
-    
-
     public String select(String[] tokens) {
-        if (!tokens[1].equals("*") || !tokens[2].equalsIgnoreCase("FROM")) {
+        if (tokens.length < 4 || !tokens[1].equals("*") || !tokens[2].equalsIgnoreCase("FROM")) {
             return "ERROR: Invalid SELECT syntax";
         }
     
@@ -106,77 +124,125 @@ public class Engine {
         // Parse WHERE clause if present
         if (tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE")) {
             whereClauseConditions = parseWhereClause(tokens, 5); // Start parsing after "WHERE"
+        }
     
-            String whereColumn = tokens[5];
-            String whereValue = tokens[7];
+        boolean usesFirstColumn = false;
+        String firstColumnValue = null;
     
-            // Use indexed lookup if condition is on the first column
-            if (whereColumn.equals(columns.get(0))) {
-                ChainHashMap<String, String> row = table.getRowByFirstColumnValue(whereValue);
-                if (row != null) {
-                    for (String column : columns) {
-                        result.append(row.getOrDefault(column, "NULL")).append("\t");
-                    }
-                    result.append("\n");
-                }
-            } else {
-                // Fallback to full table scan if WHERE is on a different column
-                for (ChainHashMap<String, String> row : table.getRows().values()) {
-                    if (evaluateWhereConditions(row, whereClauseConditions)) {
-                        for (String column : columns) {
-                            result.append(row.getOrDefault(column, "NULL")).append("\t");
-                        }
-                        result.append("\n");
-                    }
-                }
+        // Determine the name of the first column
+        String firstColumn = columns.get(0);
+    
+        // Check if any condition is on the first column with '=' operator
+        for (String[] condition : whereClauseConditions) {
+            if (condition[1] != null && condition[1].equals(firstColumn) && condition[2].equals("=")) {
+                usesFirstColumn = true;
+                firstColumnValue = condition[3];
+                break;
+            }
+        }
+    
+        List<ChainHashMap<String, String>> filteredRows = new ArrayList<>();
+        if (usesFirstColumn) {
+            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
+            if (row != null && evaluateWhereConditions(row, whereClauseConditions)) {
+                filteredRows.add(row);
             }
         } else {
-            // No WHERE clause; retrieve all rows
             for (ChainHashMap<String, String> row : table.getRows().values()) {
-                for (String column : columns) {
-                    result.append(row.getOrDefault(column, "NULL")).append("\t");
+                if (evaluateWhereConditions(row, whereClauseConditions)) {
+                    filteredRows.add(row);
                 }
-                result.append("\n");
             }
+        }
+    
+        // Sort the filtered rows by the value in the first column
+        filteredRows.sort((row1, row2) -> {
+            String value1 = row1.getOrDefault(firstColumn, "0");
+            String value2 = row2.getOrDefault(firstColumn, "0");
+    
+            try {
+                // Attempt to parse as integers for numerical sorting
+                int intVal1 = Integer.parseInt(value1);
+                int intVal2 = Integer.parseInt(value2);
+                return Integer.compare(intVal1, intVal2);
+            } catch (NumberFormatException e) {
+                // Fallback to string comparison if values are not integers
+                return value1.compareTo(value2);
+            }
+        });
+    
+        // Append sorted rows to the result
+        for (ChainHashMap<String, String> row : filteredRows) {
+            for (String column : columns) {
+                result.append(row.getOrDefault(column, "NULL")).append("\t");
+            }
+            result.append("\n");
         }
     
         return result.toString();
     }
     
-    
 
     public String update(String[] tokens) {
+        if (tokens.length < 6 || !tokens[2].equalsIgnoreCase("SET")) {
+            return "ERROR: Invalid UPDATE syntax";
+        }
+
         String tableName = tokens[1];
-    
+
         Table table = tables.get(tableName);
         if (table == null) {
             return "Error: no such table: " + tableName;
         }
-    
-        String setColumn = tokens[3];
-        String newValue = tokens[5];
-    
-        List<String> columns = table.getColumns();
-        List<String[]> whereClauseConditions = new ArrayList<>();
-    
-        // Parse WHERE clause if present
-        if (tokens.length > 6 && tokens[6].equalsIgnoreCase("WHERE")) {
-            whereClauseConditions = parseWhereClause(tokens, 7); // Start parsing after "WHERE"
+
+        // Parse SET clause
+        String setClause = "";
+        int whereIndex = -1;
+        for (int i = 3; i < tokens.length; i++) {
+            if (tokens[i].equalsIgnoreCase("WHERE")) {
+                whereIndex = i;
+                break;
+            }
+            setClause += tokens[i] + " ";
         }
-    
+        setClause = setClause.trim();
+
+        String[] setTokens = setClause.split("\\s*=\\s*");
+        if (setTokens.length != 2) {
+            return "ERROR: Invalid SET syntax";
+        }
+        String setColumn = setTokens[0];
+        String newValue = setTokens[1];
+
+        List<String[]> whereClauseConditions = new ArrayList<>();
+
+        // Parse WHERE clause if present
+        if (whereIndex != -1) {
+            whereClauseConditions = parseWhereClause(tokens, whereIndex + 1); // Start parsing after "WHERE"
+        }
+
+        List<String> columns = table.getColumns();
         int affectedRows = 0;
-    
-        // Check if WHERE clause specifies the first column for optimized lookup
-        if (!whereClauseConditions.isEmpty() && whereClauseConditions.get(0)[1].equals(columns.get(0))) {
-            String key = whereClauseConditions.get(0)[3];
-            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(key);
-    
-            if (row != null) {
+
+        // Check if any condition is on the first column with '=' operator
+        boolean usesFirstColumn = false;
+        String firstColumnValue = null;
+
+        for (String[] condition : whereClauseConditions) {
+            if (condition[1] != null && condition[1].equals(columns.get(0)) && condition[2].equals("=")) {
+                usesFirstColumn = true;
+                firstColumnValue = condition[3];
+                break;
+            }
+        }
+
+        if (usesFirstColumn) {
+            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
+            if (row != null && evaluateWhereConditions(row, whereClauseConditions)) {
                 row.put(setColumn, newValue);
                 affectedRows++;
             }
         } else {
-            // Full table scan if no indexed column specified in WHERE
             for (ChainHashMap<String, String> row : table.getRows().values()) {
                 if (evaluateWhereConditions(row, whereClauseConditions)) {
                     row.put(setColumn, newValue);
@@ -184,35 +250,45 @@ public class Engine {
                 }
             }
         }
-    
+
         return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
-    
-    
 
     public String delete(String[] tokens) {
-        if (!tokens[1].equalsIgnoreCase("FROM")) {
+        if (tokens.length < 3 || !tokens[1].equalsIgnoreCase("FROM")) {
             return "ERROR: Invalid DELETE syntax";
         }
-    
+
         String tableName = tokens[2];
         Table table = tables.get(tableName);
         if (table == null) {
             return "Error: no such table: " + tableName;
         }
-    
+
         List<String[]> whereClauseConditions = new ArrayList<>();
         int affectedRows = 0;
-    
+
         // Parse WHERE clause if present
         if (tokens.length > 3 && tokens[3].equalsIgnoreCase("WHERE")) {
             whereClauseConditions = parseWhereClause(tokens, 4); // Start parsing after "WHERE"
         }
-    
-        // Check if WHERE clause specifies the first column for optimized lookup
-        if (!whereClauseConditions.isEmpty() && whereClauseConditions.get(0)[1].equals(table.getColumns().get(0))) {
-            String key = whereClauseConditions.get(0)[3];
-            if (table.getRows().remove(key) != null) {
+
+        List<String> columns = table.getColumns();
+
+        // Check if any condition is on the first column with '=' operator
+        boolean usesFirstColumn = false;
+        String firstColumnValue = null;
+
+        for (String[] condition : whereClauseConditions) {
+            if (condition[1] != null && condition[1].equals(columns.get(0)) && condition[2].equals("=")) {
+                usesFirstColumn = true;
+                firstColumnValue = condition[3];
+                break;
+            }
+        }
+
+        if (usesFirstColumn) {
+            if (table.getRows().remove(firstColumnValue) != null) {
                 affectedRows++;
             }
         } else {
@@ -229,14 +305,9 @@ public class Engine {
                 table.getRows().remove(key);
             }
         }
-    
+
         return "Rows deleted from " + tableName + ". " + affectedRows + " rows affected.";
     }
-    
-    
-
-    
-
 
     /*
      *  HELPER METHODS
@@ -247,15 +318,37 @@ public class Engine {
     // Helper method to extract content inside parentheses
     private String queryBetweenParentheses(String[] tokens, int startIndex) {
         StringBuilder result = new StringBuilder();
+        boolean openParenthesisFound = false;
+
         for (int i = startIndex; i < tokens.length; i++) {
-            result.append(tokens[i]).append(" ");
+            String token = tokens[i];
+            if (token.startsWith("(")) {
+                openParenthesisFound = true;
+                token = token.substring(1);
+            }
+            if (token.endsWith(")")) {
+                token = token.substring(0, token.length() - 1);
+                result.append(token);
+                break;
+            }
+            result.append(token).append(" ");
         }
-        return result.toString().trim().replaceAll("\\(", "").replaceAll("\\)", "");
+
+        if (!openParenthesisFound) {
+            throw new IllegalArgumentException("Parentheses not found in query.");
+        }
+
+        return result.toString().trim();
     }
 
     // Helper method to evaluate a single condition
     private boolean evaluateCondition(String columnValue, String operator, String value) {
         if (columnValue == null) return false;
+
+        // Remove quotes from value if present
+        if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith("\"") && value.endsWith("\""))) {
+            value = value.substring(1, value.length() - 1);
+        }
 
         // Compare strings as numbers if possible
         boolean isNumeric = isNumeric(columnValue) && isNumeric(value);
@@ -264,23 +357,35 @@ public class Engine {
             double valueNumber = Double.parseDouble(value);
 
             switch (operator) {
-                case "=": return columnNumber == valueNumber;
-                case ">": return columnNumber > valueNumber;
-                case "<": return columnNumber < valueNumber;
-                case ">=": return columnNumber >= valueNumber;
-                case "<=": return columnNumber <= valueNumber;
+                case "=":
+                    return columnNumber == valueNumber;
+                case ">":
+                    return columnNumber > valueNumber;
+                case "<":
+                    return columnNumber < valueNumber;
+                case ">=":
+                    return columnNumber >= valueNumber;
+                case "<=":
+                    return columnNumber <= valueNumber;
+                default:
+                    return false;
             }
         } else {
             switch (operator) {
-                case "=": return columnValue.equals(value);
-                case ">": return columnValue.compareTo(value) > 0;
-                case "<": return columnValue.compareTo(value) < 0;
-                case ">=": return columnValue.compareTo(value) >= 0;
-                case "<=": return columnValue.compareTo(value) <= 0;
+                case "=":
+                    return columnValue.equals(value);
+                case ">":
+                    return columnValue.compareTo(value) > 0;
+                case "<":
+                    return columnValue.compareTo(value) < 0;
+                case ">=":
+                    return columnValue.compareTo(value) >= 0;
+                case "<=":
+                    return columnValue.compareTo(value) <= 0;
+                default:
+                    return false;
             }
         }
-
-        return false;
     }
 
     // Helper method to determine if a string is an operator
@@ -290,6 +395,7 @@ public class Engine {
 
     // Helper method to determine if a string is numeric
     private boolean isNumeric(String str) {
+        if (str == null) return false;
         try {
             Double.parseDouble(str);
             return true;
@@ -327,21 +433,30 @@ public class Engine {
 
     private List<String[]> parseWhereClause(String[] tokens, int startIndex) {
         List<String[]> whereClauseConditions = new ArrayList<>();
-    
-        for (int i = startIndex; i < tokens.length; i++) {
-            if (tokens[i].equalsIgnoreCase("AND") || tokens[i].equalsIgnoreCase("OR")) {
-                // Add AND/OR conditions
-                whereClauseConditions.add(new String[] {tokens[i].toUpperCase(), null, null, null});
-            } else if (isOperator(tokens[i])) {
-                // Add condition with operator (column, operator, value)
-                String column = tokens[i - 1];
+        int i = startIndex;
+
+        while (i < tokens.length) {
+            String token = tokens[i];
+
+            if (token.equalsIgnoreCase("AND") || token.equalsIgnoreCase("OR")) {
+                whereClauseConditions.add(new String[]{token.toUpperCase(), null, null, null});
+                i++;
+            } else {
+                String column = token;
+                i++;
+                if (i >= tokens.length || !isOperator(tokens[i])) {
+                    throw new IllegalArgumentException("Invalid WHERE clause syntax near: " + column);
+                }
                 String operator = tokens[i];
-                String value = tokens[i + 1];
-                whereClauseConditions.add(new String[] {null, column, operator, value});
-                i += 1; // Skip the value since it has been processed
+                i++;
+                if (i >= tokens.length) {
+                    throw new IllegalArgumentException("Missing value after operator in WHERE clause.");
+                }
+                String value = tokens[i];
+                whereClauseConditions.add(new String[]{null, column, operator, value});
+                i++;
             }
         }
         return whereClauseConditions;
     }
-    
 }
