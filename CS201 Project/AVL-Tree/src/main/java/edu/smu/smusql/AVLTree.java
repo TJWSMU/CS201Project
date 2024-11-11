@@ -18,6 +18,12 @@ public class AVLTree {
     }
 
     private Node root;
+    private List<String> columns;
+
+    public AVLTree(List<String> columns) {
+        this.root = null;
+        this.columns = columns;
+    }
 
     // Get height of a node
     private int getHeight(Node node) {
