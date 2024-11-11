@@ -30,14 +30,15 @@ public class Engine {
     public String insert(String[] tokens) {
         // Get the tree with the correct name
         // Check if second word is TABLE
-        if (!tokens[1].equalsIgnoreCase("TABLE")) {
-            return "ERROR: Invalid CREATE TABLE syntax";
+        if (!tokens[1].equalsIgnoreCase("into")) {
+            return "ERROR: Invalid INSERT INTO syntax";
         }
 
         // Check if the table already exists
         String tableName = tokens[2];
-        if (tableMap.containsKey(tableName)) {
-            return "ERROR: Table already exists";
+        AVLTree table = tableMap.containsKey(tableName);
+        if (table == null) {
+            return "ERROR: Table does not exists";
         }
 
         return "not implemented";
