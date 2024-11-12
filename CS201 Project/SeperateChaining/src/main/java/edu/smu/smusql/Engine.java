@@ -97,8 +97,8 @@ public class Engine {
         for (int i = 0; i < columns.size(); i++) {
             row.put(columns.get(i), values.get(i));
         }
-
         // Add the new row using the first column value as the key
+
         return table.addRow(row);
     }
 
@@ -156,20 +156,20 @@ public class Engine {
         }
     
         // Sort the filtered rows by the value in the first column
-        filteredRows.sort((row1, row2) -> {
-            String value1 = row1.getOrDefault(firstColumn, "0");
-            String value2 = row2.getOrDefault(firstColumn, "0");
+        // filteredRows.sort((row1, row2) -> {
+        //     String value1 = row1.getOrDefault(firstColumn, "0");
+        //     String value2 = row2.getOrDefault(firstColumn, "0");
     
-            try {
-                // Attempt to parse as integers for numerical sorting
-                int intVal1 = Integer.parseInt(value1);
-                int intVal2 = Integer.parseInt(value2);
-                return Integer.compare(intVal1, intVal2);
-            } catch (NumberFormatException e) {
-                // Fallback to string comparison if values are not integers
-                return value1.compareTo(value2);
-            }
-        });
+        //     try {
+        //         // Attempt to parse as integers for numerical sorting
+        //         int intVal1 = Integer.parseInt(value1);
+        //         int intVal2 = Integer.parseInt(value2);
+        //         return Integer.compare(intVal1, intVal2);
+        //     } catch (NumberFormatException e) {
+        //         // Fallback to string comparison if values are not integers
+        //         return value1.compareTo(value2);
+        //     }
+        // });
     
         // Append sorted rows to the result
         for (ChainHashMap<String, String> row : filteredRows) {
@@ -178,7 +178,6 @@ public class Engine {
             }
             result.append("\n");
         }
-    
         return result.toString();
     }
     
@@ -250,7 +249,7 @@ public class Engine {
                 }
             }
         }
-
+        
         return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
 

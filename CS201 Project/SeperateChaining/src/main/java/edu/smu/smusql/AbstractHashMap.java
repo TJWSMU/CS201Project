@@ -16,9 +16,9 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
     protected int capacity;        // Capacity of the table
     private int prime;             // Prime number for hash function
     private long scale, shift;     // Shift and scale factors
-
+    //private long resize_count = 0;
     /** Default values */
-    private static final int DEFAULT_CAPACITY = 17;
+    protected static final int DEFAULT_CAPACITY = 17;
     private static final int DEFAULT_PRIME = 109345121;
 
     /** Constructors */
@@ -75,7 +75,11 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(Object key) {
-        return bucketRemove(hashValue((K) key), (K) key);
+        V answer = bucketRemove(hashValue((K) key), (K) key);
+        if (n < capacity * 0.25 && capacity > DEFAULT_CAPACITY) { 
+            resize(Math.max(DEFAULT_CAPACITY, capacity / 2));  // Resize down if under 25% capacity, but not below default
+        }
+        return answer;
     }
 
     /** Abstract methods to be implemented by subclasses */
@@ -92,6 +96,8 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
         n = 0; // Reset size
         for (Entry<K, V> e : entries)
             put(e.getKey(), e.getValue());
+        //resize_count = resize_count + 1;
+        //System.out.println("Resized:"+(resize_count));
     }
 
     /** The following methods are part of the Map interface but are left to be implemented by subclasses */

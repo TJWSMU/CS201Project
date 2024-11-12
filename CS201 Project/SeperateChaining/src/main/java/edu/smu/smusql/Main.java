@@ -28,7 +28,7 @@ public class Main {
                 break;
             } else if (query.equalsIgnoreCase("evaluate")) {
                 long startTime = System.nanoTime();
-                autoEvaluate();
+                DatabaseAutoEvaluator.autoEvaluate();
                 long stopTime = System.nanoTime();
                 long elapsedTime = stopTime - startTime;
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
@@ -206,233 +206,129 @@ public class Main {
         System.out.println("\nEvaluation completed.");
     }
     
+    public class DatabaseAutoEvaluator {
 
-    public static void autoEvaluate() {
-
-        // Set the number of queries to execute
-        int numberOfQueries = 100000;
-
-        // Create tables
-        dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
-        dbEngine.executeSQL("CREATE TABLE products (id, name, price, category)");
-        dbEngine.executeSQL("CREATE TABLE orders (id, user_id, product_id, quantity)");
-
-        // Random data generator
-        Random random = new Random();
-
-        prepopulateTables(random);
-
-        // Loop to simulate millions of queries
-        for (int i = 0; i < numberOfQueries; i++) {
-            int queryType = random.nextInt(6);  // Randomly choose the type of query to execute
-
+        private static final int NUMBER_OF_QUERIES = 400000;
+        private static final String[] QUERY_TYPES = {"INSERT", "UPDATE", "SELECT", "DELETE"};
+        private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
+        private static final Random RANDOM = new Random();
+    
+        // Counters to track the number of rows in each table
+        private static int userCount = 50;
+        private static int productCount = 50;
+        private static int orderCount = 50;
+    
+        public static void autoEvaluate() {
+            initializeTables();
+            prepopulateTables();
+    
+            for (int queryType = 0; queryType < QUERY_TYPES.length; queryType++) {
+                long startTime = System.nanoTime();
+    
+                processQueries(queryType);
+    
+                double elapsedTimeInSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0;
+                System.out.printf("Processed %d %s queries in %.2f seconds%n", QUERIES_PER_TYPE, QUERY_TYPES[queryType], elapsedTimeInSeconds);
+            }
+    
+            System.out.printf("Finished processing %d queries in total.%n", NUMBER_OF_QUERIES);
+        }
+    
+        private static void initializeTables() {
+            dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
+            dbEngine.executeSQL("CREATE TABLE products (id, name, price, category)");
+            dbEngine.executeSQL("CREATE TABLE orders (id, user_id, product_id, quantity)");
+        }
+    
+        private static void prepopulateTables() {
+            System.out.println("Prepopulating tables...");
+            for (int i = 0; i < 50; i++) {
+                dbEngine.executeSQL(String.format("INSERT INTO users VALUES (%d, 'User%d', %d, '%s')", i, i, 20 + (i % 41), getRandomCity()));
+                dbEngine.executeSQL(String.format("INSERT INTO products VALUES (%d, 'Product%d', %.2f, '%s')", i, i, 10 + (double)(i % 990), getRandomCategory()));
+                dbEngine.executeSQL(String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", i, RANDOM.nextInt(50), RANDOM.nextInt(50), RANDOM.nextInt(99) + 1));
+            }
+        }
+    
+        private static void processQueries(int queryType) {
+            for (int i = 0; i < QUERIES_PER_TYPE; i++) {
+                executeQuery(queryType, i);
+                if (i % 5000 == 0 && i != 0) {
+                   // System.out.printf("Processed %d %s queries so far...%n", i, QUERY_TYPES[queryType]);
+                }
+            }
+        }
+    
+        private static void executeQuery(int queryType, int count) {
             switch (queryType) {
-                case 0:  // INSERT query
-                    insertRandomData(random);
-                    break;
-                case 1:  // SELECT query (simple)
-                    selectRandomData(random);
-                    break;
-                case 2:  // UPDATE query
-                    updateRandomData(random);
-                    break;
-                case 3:  // DELETE query
-                    deleteRandomData(random);
-                    break;
-                case 4:  // Complex SELECT query with WHERE, AND, OR, >, <, LIKE
-                    complexSelectQuery(random);
-                    break;
-                case 5:  // Complex UPDATE query with WHERE
-                    complexUpdateQuery(random);
-                    break;
-            }
-
-            // Print progress every 10,000 queries
-            if (i % 10000 == 0 && i != 0) {
-                System.out.println("Processed " + i + " queries...");
+                case 0 -> insertRandomData(count);
+                case 1 -> executeUpdateQuery();
+                case 2 -> executeSelectQuerySimple();
+                case 3 -> deleteRandomData();
             }
         }
-
-        System.out.println("Finished processing " + numberOfQueries + " queries.");
-    }
-
-    private static void prepopulateTables(Random random) {
-        System.out.println("Prepopulating users");
-        // Insert initial users
-        for (int i = 0; i < 50; i++) {
-            String name = "User" + i;
-            int age = 20 + (i % 41); // Ages between 20 and 60
-            String city = getRandomCity(random);
-            String insertCommand = String.format("INSERT INTO users VALUES (%d, '%s', %d, '%s')", i, name, age, city);
-            dbEngine.executeSQL(insertCommand);
+    
+        private static void insertRandomData(int count) {
+            int id = count / 3 + 1 + 50;
+            String query;
+            switch (count % 3) {
+                case 0 -> {
+                    query = String.format("INSERT INTO users VALUES (%d, 'User%d', %d, '%s')", id, id, RANDOM.nextInt(41) + 20, getRandomCity());
+                    userCount++;
+                }
+                case 1 -> {
+                    query = String.format("INSERT INTO products VALUES (%d, 'Product%d', %.2f, '%s')", id, id, 50 + (RANDOM.nextDouble() * 950), getRandomCategory());
+                    productCount++;
+                }
+                case 2 -> {
+                    query = String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", id, RANDOM.nextInt(userCount), RANDOM.nextInt(productCount), RANDOM.nextInt(10) + 1);
+                    orderCount++;
+                }
+                default -> throw new IllegalArgumentException("Invalid query type");
+            }
+            dbEngine.executeSQL(query);
         }
-        System.out.println("Prepopulating products");
-        // Insert initial products
-        for (int i = 0; i < 50; i++) {
-            String productName = "Product" + i;
-            double price = 10 + (i % 990); // Prices between $10 and $1000
-            String category = getRandomCategory(random);
-            String insertCommand = String.format("INSERT INTO products VALUES (%d, '%s', %.2f, '%s')", i, productName, price, category);
-            dbEngine.executeSQL(insertCommand);
-        }
-        System.out.println("Prepopulating orders");
-        // Insert initial orders
-        for (int i = 0; i < 50; i++) {
-            int user_id = random.nextInt(9999);
-            int product_id = random.nextInt(9999);
-            int quantity = random.nextInt(99) + 1; // Quantity between 1 and 100
-            String insertCommand = String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", i, user_id, product_id, quantity);
-            dbEngine.executeSQL(insertCommand);
-        }
-    }
+    
+        // private static void executeSelectQueryRange() {
+        //     String query = RANDOM.nextBoolean() ? "SELECT * FROM users WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
+        //             : "SELECT * FROM products WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
+        //     dbEngine.executeSQL(query);
+        // }
 
-    // Helper method to insert random data into users, products, or orders table
-    private static void insertRandomData(Random random) {
-        int tableChoice = random.nextInt(3);
-        switch (tableChoice) {
-            case 0: // Insert into users table
-                int id = random.nextInt(10000) + 10000;
-                String name = "User" + id;
-                int age = random.nextInt(60) + 20;
-                String city = getRandomCity(random);
-                String insertUserQuery = "INSERT INTO users VALUES (" + id + ", '" + name + "', " + age + ", '" + city + "')";
-                dbEngine.executeSQL(insertUserQuery);
-                break;
-            case 1: // Insert into products table
-                int productId = random.nextInt(1000) + 10000;
-                String productName = "Product" + productId;
-                double price = 50 + (random.nextDouble() * 1000);
-                String category = getRandomCategory(random);
-                String insertProductQuery = "INSERT INTO products VALUES (" + productId + ", '" + productName + "', " + price + ", '" + category + "')";
-                dbEngine.executeSQL(insertProductQuery);
-                break;
-            case 2: // Insert into orders table
-                int orderId = random.nextInt(10000) + 1;
-                int userId = random.nextInt(10000) + 1;
-                int productIdRef = random.nextInt(1000) + 1;
-                int quantity = random.nextInt(10) + 1;
-                String insertOrderQuery = "INSERT INTO orders VALUES (" + orderId + ", " + userId + ", " + productIdRef + ", " + quantity + ")";
-                dbEngine.executeSQL(insertOrderQuery);
-                break;
+        private static void executeSelectQuerySimple() {
+            String query = RANDOM.nextBoolean() ? "SELECT * FROM users WHERE id = " +  RANDOM.nextInt(userCount)
+                    : "SELECT * FROM products WHERE id = " + RANDOM.nextInt(productCount);
+            dbEngine.executeSQL(query);
         }
-    }
-
-    // Helper method to randomly select data from tables
-    private static void selectRandomData(Random random) {
-        int tableChoice = random.nextInt(3);
-        String selectQuery;
-        switch (tableChoice) {
-            case 0:
-                selectQuery = "SELECT * FROM users";
-                break;
-            case 1:
-                selectQuery = "SELECT * FROM products";
-                break;
-            case 2:
-                selectQuery = "SELECT * FROM orders";
-                break;
-            default:
-                selectQuery = "SELECT * FROM users";
+    
+        private static void executeUpdateQuery() {
+            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE id = " + RANDOM.nextInt(userCount)
+                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE id = " + RANDOM.nextInt(productCount);
+            dbEngine.executeSQL(query);
         }
-        dbEngine.executeSQL(selectQuery);
-    }
-
-    // Helper method to update random data in the tables
-    private static void updateRandomData(Random random) {
-        int tableChoice = random.nextInt(3);
-        switch (tableChoice) {
-            case 0: // Update users table
-                int id = random.nextInt(10000) + 1;
-                int newAge = random.nextInt(60) + 20;
-                String updateUserQuery = "UPDATE users SET age = " + newAge + " WHERE id = " + id;
-                dbEngine.executeSQL(updateUserQuery);
-                break;
-            case 1: // Update products table
-                int productId = random.nextInt(1000) + 1;
-                double newPrice = 50 + (random.nextDouble() * 1000);
-                String updateProductQuery = "UPDATE products SET price = " + newPrice + " WHERE id = " + productId;
-                dbEngine.executeSQL(updateProductQuery);
-                break;
-            case 2: // Update orders table
-                int orderId = random.nextInt(10000) + 1;
-                int newQuantity = random.nextInt(10) + 1;
-                String updateOrderQuery = "UPDATE orders SET quantity = " + newQuantity + " WHERE id = " + orderId;
-                dbEngine.executeSQL(updateOrderQuery);
-                break;
+    
+        private static void deleteRandomData() {
+            String query;
+            switch (RANDOM.nextInt(3)) {
+                case 0 -> query = "DELETE FROM users WHERE id = " + (--userCount);
+                case 1 -> query = "DELETE FROM products WHERE id = " + (--productCount);
+                case 2 -> query = "DELETE FROM orders WHERE id = " + (--orderCount);
+                default -> throw new IllegalArgumentException("Invalid delete operation");
+            }
+            dbEngine.executeSQL(query);
+        }
+    
+        private static String getRandomCity() {
+            return getRandomElement(new String[]{"New York", "Los Angeles", "Chicago", "Boston", "Miami", "Seattle", "Austin", "Dallas", "Atlanta", "Denver"});
+        }
+    
+        private static String getRandomCategory() {
+            return getRandomElement(new String[]{"Electronics", "Appliances", "Clothing", "Furniture", "Toys", "Sports", "Books", "Beauty", "Garden"});
+        }
+    
+        private static String getRandomElement(String[] array) {
+            return array[RANDOM.nextInt(array.length)];
         }
     }
-
-    // Helper method to delete random data from tables
-    private static void deleteRandomData(Random random) {
-        int tableChoice = random.nextInt(3);
-        switch (tableChoice) {
-            case 0: // Delete from users table
-                int userId = random.nextInt(10000) + 1;
-                String deleteUserQuery = "DELETE FROM users WHERE id = " + userId;
-                dbEngine.executeSQL(deleteUserQuery);
-                break;
-            case 1: // Delete from products table
-                int productId = random.nextInt(1000) + 1;
-                String deleteProductQuery = "DELETE FROM products WHERE id = " + productId;
-                dbEngine.executeSQL(deleteProductQuery);
-                break;
-            case 2: // Delete from orders table
-                int orderId = random.nextInt(10000) + 1;
-                String deleteOrderQuery = "DELETE FROM orders WHERE id = " + orderId;
-                dbEngine.executeSQL(deleteOrderQuery);
-                break;
-        }
-    }
-
-    // Helper method to execute a complex SELECT query with WHERE, AND, OR, >, <
-    private static void complexSelectQuery(Random random) {
-        int tableChoice = random.nextInt(2);  // Complex queries only on users and products for now
-        String complexSelectQuery;
-        switch (tableChoice) {
-            case 0: // Complex SELECT on users
-                int minAge = random.nextInt(20) + 20;
-                int maxAge = minAge + random.nextInt(30);
-                complexSelectQuery = "SELECT * FROM users WHERE age > " + minAge + " AND age < " + maxAge;
-                break;
-            case 1: // Complex SELECT on products
-                double minPrice = 50 + (random.nextDouble() * 200);
-                double maxPrice = minPrice + random.nextDouble() * 500;
-                complexSelectQuery = "SELECT * FROM products WHERE price > " + minPrice + " AND price < " + maxPrice;
-                break;
-            default:
-                complexSelectQuery = "SELECT * FROM users";
-        }
-        dbEngine.executeSQL(complexSelectQuery);
-    }
-
-    // Helper method to execute a complex UPDATE query with WHERE
-    private static void complexUpdateQuery(Random random) {
-        int tableChoice = random.nextInt(2);  // Complex updates only on users and products for now
-        switch (tableChoice) {
-            case 0: // Complex UPDATE on users
-                int newAge = random.nextInt(60) + 20;
-                String city = getRandomCity(random);
-                String updateUserQuery = "UPDATE users SET age = " + newAge + " WHERE city = '" + city + "'";
-                dbEngine.executeSQL(updateUserQuery);
-                break;
-            case 1: // Complex UPDATE on products
-                double newPrice = 50 + (random.nextDouble() * 1000);
-                String category = getRandomCategory(random);
-                String updateProductQuery = "UPDATE products SET price = " + newPrice + " WHERE category = '" + category + "'";
-                dbEngine.executeSQL(updateProductQuery);
-                break;
-        }
-    }
-
-    // Helper method to return a random city
-    private static String getRandomCity(Random random) {
-        String[] cities = {"New York", "Los Angeles", "Chicago", "Boston", "Miami", "Seattle", "Austin", "Dallas", "Atlanta", "Denver"};
-        return cities[random.nextInt(cities.length)];
-    }
-
-    // Helper method to return a random category for products
-    private static String getRandomCategory(Random random) {
-        String[] categories = {"Electronics", "Appliances", "Clothing", "Furniture", "Toys", "Sports", "Books", "Beauty", "Garden"};
-        return categories[random.nextInt(categories.length)];
-    }
+    
+    
 }
