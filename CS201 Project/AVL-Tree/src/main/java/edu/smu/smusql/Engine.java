@@ -13,21 +13,29 @@ public class Engine {
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
         String command = tokens[0].toUpperCase();
+        String result;
 
         switch (command) {
             case "CREATE":
-                return create(tokens);
+                result = create(tokens);
+                break;
             case "INSERT":
-                return insert(tokens);
+                result = insert(tokens);
+                break;
             case "SELECT":
-                return select(tokens);
+                result = select(tokens);
+                break;
             case "UPDATE":
-                return update(tokens);
+                result = update(tokens);
+                break;
             case "DELETE":
-                return delete(tokens);
+                result = delete(tokens);
+                break;
             default:
                 return "ERROR: Unknown command";
         }
+
+        return result;
     }
 
     public String insert(String[] tokens) {
@@ -60,14 +68,11 @@ public class Engine {
         for (int i = 0; i < colKeys.size(); i++) {
             data.put(colKeys.get(i), columnList.get(i));
         }
-        
+
         // Insert data into the AVL tree
         table.insert(data);
 
-        // Testing code
-        // table.printTree();
-
-        return "Row inserted into table " + tableName;
+        return "Row inserted into " + tableName;
 
         // INSERT INTO student VALUES (1, John, 20, 3.5, True)
         // INSERT INTO student VALUES (2, Mary, 22, 3.8, True)
@@ -113,7 +118,7 @@ public class Engine {
             if (deleted) deletedCount++;
         }
     
-        return "Deleted " + deletedCount + " rows from table " + tableName;
+        return "Rows deleted from " + tableName + ". " + deletedCount + " rows affected.";
     }
     
     private boolean deleteNode(AVLTree table, Map<String, String> nodeData) {
@@ -125,6 +130,7 @@ public class Engine {
         // Find the node to delete and its parent
         while (current != null) {
             String currentId = current.columnData.get(idColumn);
+
             int comparison = targetId.compareTo(currentId);
             
             if (comparison == 0) {
@@ -140,7 +146,8 @@ public class Engine {
         }
     
         if (current == null) {
-            return false; // Node not found
+            System.out.println("Node not found for deletion");
+            return false;
         }
     
         // Case 1: Node has no children
@@ -279,9 +286,8 @@ public class Engine {
         // Initialize result StringBuilder
         StringBuilder result = new StringBuilder();
         
-        // Add header row
-        result.append(String.join(" | ", colKeys)).append("\n");
-        result.append("-".repeat(result.length())).append("\n");
+        // Add header row (no separator line)
+        result.append(String.join(" ", colKeys)).append("\n");  // Space instead of tab
     
         // Check if WHERE clause exists
         boolean hasWhere = tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE");
@@ -294,11 +300,18 @@ public class Engine {
     
         // Add matching rows to result
         for (Map<String, String> row : matchingRows) {
+            result.append(" ");  // Space before each row
             List<String> rowValues = new ArrayList<>();
             for (String col : colKeys) {
-                rowValues.add(row.get(col));
+                // Remove quotes and 'VALUES' from string values
+                String value = row.get(col).replaceAll("'", "").replaceAll("VALUES", "").trim();
+                rowValues.add(value);
             }
-            result.append(String.join(" | ", rowValues)).append("\n");
+            result.append(String.join(" ", rowValues)).append("\n");
+        }
+
+        if (result.length() > 0 && result.charAt(result.length() - 1) == '\n') {
+            result.setLength(result.length() - 1);
         }
     
         return result.toString();
@@ -362,9 +375,11 @@ public class Engine {
         String[] parts = condition.split("\\s+");
         String column = parts[0];
         String operator = parts[1];
-        String value = parts[2].replace("VALUES", "").trim(); // Remove "VALUES" if present
+        // Remove quotes and clean value
+        String value = parts[2].replace("VALUES", "").replace("'", "").trim();
         
-        String rowValue = row.get(column);
+        // Get row value and clean it
+        String rowValue = row.get(column).replace("'", "").trim();
         
         // Special handling for ID column
         if (column.equalsIgnoreCase("id")) {
@@ -382,7 +397,6 @@ public class Engine {
             }
         }
         
-        // Handle other data types as before
         try {
             // Try numeric comparison
             double numValue = Double.parseDouble(value);
@@ -403,8 +417,10 @@ public class Engine {
                 boolean boolRowValue = Boolean.parseBoolean(rowValue);
                 return operator.equals("=") ? boolValue == boolRowValue : boolValue != boolRowValue;
             } else {
-                // String comparison
-                return operator.equals("=") ? rowValue.equals(value) : !rowValue.equals(value);
+                // Case-insensitive string comparison
+                return operator.equals("=") ? 
+                    rowValue.equalsIgnoreCase(value) : 
+                    !rowValue.equalsIgnoreCase(value);
             }
         }
     }
@@ -440,7 +456,6 @@ public class Engine {
         List<Map<String, String>> nodesToUpdate = new ArrayList<>();
         traverseAndFilter(table.root, nodesToUpdate, tokens, 7);
 
-        // No matching rows
         if (nodesToUpdate.isEmpty()) {
             return "No rows matched the update condition";
         }
@@ -448,19 +463,38 @@ public class Engine {
         // Update matching nodes
         int updatedCount = 0;
         for (Map<String, String> nodeData : nodesToUpdate) {
-            // Delete old node
-            deleteNode(table, nodeData);
-            
-            // Create updated node data
-            Map<String, String> updatedData = new HashMap<>(nodeData);
-            updatedData.put(updateColumn, updateValue);
-            
-            // Insert updated node
-            table.insert(updatedData);
-            updatedCount++;
+            AVLTree.Node node = findNode(table, nodeData);
+            if (node != null) {
+                node.columnData.put(updateColumn, updateValue);
+                updatedCount++;
+            }
         }
 
-        return "Updated " + updatedCount + " rows in table " + tableName;
+        return "Table " + tableName + " updated. " + updatedCount + " rows affected.";
+    }
+
+    // Add this helper method to find a node
+    private AVLTree.Node findNode(AVLTree table, Map<String, String> nodeData) {
+        AVLTree.Node current = table.root;
+        String idColumn = table.getColumns().get(0);
+        String targetId = nodeData.get(idColumn);
+
+        while (current != null) {
+            String currentId = current.columnData.get(idColumn);
+            int comparison = targetId.compareTo(currentId);
+            
+            if (comparison == 0) {
+                return current;
+            }
+            
+            if (comparison < 0) {
+                current = current.left;
+            } else {
+                current = current.right;
+            }
+        }
+        
+        return null;
     }
 
     public String create(String[] tokens) {
@@ -501,3 +535,4 @@ public class Engine {
     }
 
 }
+
