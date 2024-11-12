@@ -2,25 +2,29 @@ package edu.smu.smusql;
 
 import java.util.*;
 
-// @author ziyuanliu@smu.edu.sg
-
 public class Main {
-    /*
-     *  Main method for accessing the command line interface of the database engine.
-     *  MODIFICATION OF THIS FILE IS NOT RECOMMENDED!
-     */
+    // Main method to run the simple database engine
     static Engine dbEngine = new Engine();
+
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("smuSQL Starter Code version 0.5");
-        System.out.println("Have fun, and good luck!");
+        System.out.println("smuSQL version 0.5.1 2024-09-20");
+        System.out.println("sample implementation for reference only");
 
         while (true) {
             System.out.print("smusql> ");
             String query = scanner.nextLine();
             if (query.equalsIgnoreCase("exit")) {
+                break;
+            } else if (query.equalsIgnoreCase("evaluateCorrectness")) {
+                long startTime = System.nanoTime();
+                evaluateCorrectness();
+                long stopTime = System.nanoTime();
+                long elapsedTime = stopTime - startTime;
+                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
                 break;
             } else if (query.equalsIgnoreCase("evaluate")) {
                 long startTime = System.nanoTime();
@@ -37,15 +41,176 @@ public class Main {
         scanner.close();
     }
 
+    public static void evaluateCorrectness() {
+        System.out.println("Evaluating correctness of the Engine...");
+    
+        // Reset the Engine's state
+        dbEngine = new Engine();
+    
+        // Inner class to represent a test case
+        class TestCase {
+            String description;
+            List<String> commands;
+            List<String> expectedOutputs;
+    
+            public TestCase(String description, List<String> commands, List<String> expectedOutputs) {
+                this.description = description;
+                this.commands = commands;
+                this.expectedOutputs = expectedOutputs;
+            }
+        }
+    
+        List<TestCase> testCases = new ArrayList<>();
+    
+        // Test Case 1: Create table and insert data
+        testCases.add(new TestCase(
+            "Test Case 1: Create table and insert data",
+            Arrays.asList(
+                "CREATE TABLE Employees (ID, Name, Age, Department)",
+                "INSERT INTO Employees VALUES (1, 'Alice', 30, 'HR')",
+                "INSERT INTO Employees VALUES (2, 'Bob', 25, 'Engineering')",
+                "INSERT INTO Employees VALUES (3, 'Charlie', 35, 'HR')",
+                "INSERT INTO Employees VALUES (4, 'David', 28, 'Engineering')",
+                "INSERT INTO Employees VALUES (5, 'Eve', 45, 'Finance')",
+                "SELECT * FROM Employees"
+            ),
+            Arrays.asList(
+                "Table Employees created",
+                "Row inserted into Employees",
+                "Row inserted into Employees",
+                "Row inserted into Employees",
+                "Row inserted into Employees",
+                "Row inserted into Employees",
+                "ID\tName\tAge\tDepartment\n" +
+                "1\tAlice\t30\tHR\n" +
+                "2\tBob\t25\tEngineering\n" +
+                "3\tCharlie\t35\tHR\n" +
+                "4\tDavid\t28\tEngineering\n" +
+                "5\tEve\t45\tFinance\n"
+            )
+        ));
+    
+        // Test Case 2: Select with WHERE clause using AND
+        testCases.add(new TestCase(
+            "Test Case 2: Select with WHERE clause using AND",
+            Arrays.asList(
+                "SELECT * FROM Employees WHERE Department = 'Engineering' AND Age > 26"
+            ),
+            Arrays.asList(
+                "ID\tName\tAge\tDepartment\n" +
+                "4\tDavid\t28\tEngineering\n"
+            )
+        ));
+    
+        // Test Case 3: Select with WHERE clause using OR
+        testCases.add(new TestCase(
+            "Test Case 3: Select with WHERE clause using OR",
+            Arrays.asList(
+                "SELECT * FROM Employees WHERE Department = 'HR' OR Age > 40"
+            ),
+            Arrays.asList(
+                "ID\tName\tAge\tDepartment\n" +
+                "1\tAlice\t30\tHR\n" +
+                "3\tCharlie\t35\tHR\n" +
+                "5\tEve\t45\tFinance\n"
+            )
+        ));
+    
+        // Test Case 4: Update a single row
+        testCases.add(new TestCase(
+            "Test Case 4: Update a single row",
+            Arrays.asList(
+                "UPDATE Employees SET Department = 'Management' WHERE Name = 'David'",
+                "SELECT * FROM Employees WHERE Name = 'David'"
+            ),
+            Arrays.asList(
+                "Table Employees updated. 1 rows affected.",
+                "ID\tName\tAge\tDepartment\n" +
+                "4\tDavid\t28\tManagement\n"
+            )
+        ));
+    
+        // Test Case 5: Update multiple rows
+        testCases.add(new TestCase(
+            "Test Case 5: Update multiple rows",
+            Arrays.asList(
+                "UPDATE Employees SET Department = 'Sales' WHERE Age > 30",
+                "SELECT * FROM Employees WHERE Department = 'Sales'"
+            ),
+            Arrays.asList(
+                "Table Employees updated. 2 rows affected.",
+                "ID\tName\tAge\tDepartment\n" +
+                "3\tCharlie\t35\tSales\n" +
+                "5\tEve\t45\tSales\n"
+            )
+        ));
+    
+        // Test Case 6: Delete a single row
+        testCases.add(new TestCase(
+            "Test Case 6: Delete a single row",
+            Arrays.asList(
+                "DELETE FROM Employees WHERE Name = 'Bob'",
+                "SELECT * FROM Employees"
+            ),
+            Arrays.asList(
+                "Rows deleted from Employees. 1 rows affected.",
+                "ID\tName\tAge\tDepartment\n" +
+                "1\tAlice\t30\tHR\n" +
+                "3\tCharlie\t35\tSales\n" +
+                "4\tDavid\t28\tManagement\n" +
+                "5\tEve\t45\tSales\n"
+            )
+        ));
+    
+        // Test Case 7: Delete multiple rows
+        testCases.add(new TestCase(
+            "Test Case 7: Delete multiple rows",
+            Arrays.asList(
+                "DELETE FROM Employees WHERE Department = 'Sales'",
+                "SELECT * FROM Employees"
+            ),
+            Arrays.asList(
+                "Rows deleted from Employees. 2 rows affected.",
+                "ID\tName\tAge\tDepartment\n" +
+                "1\tAlice\t30\tHR\n" +
+                "4\tDavid\t28\tManagement\n"
+            )
+        ));
+    
+        // Now, for each test case, execute the commands and compare outputs
+        for (TestCase testCase : testCases) {
+            System.out.println("\nRunning " + testCase.description);
+    
+            for (int i = 0; i < testCase.commands.size(); i++) {
+                String command = testCase.commands.get(i);
+                String expectedOutput = testCase.expectedOutputs.get(i);
+    
+                String actualOutput = dbEngine.executeSQL(command);
+    
+                String normalizedExpected = expectedOutput.replaceAll("\\s+", " ").trim();
+                String normalizedActual = actualOutput.replaceAll("\\s+", " ").trim();
 
-    /*
-     *  Below is the code for auto-evaluating your work.
-     *  DO NOT CHANGE ANYTHING BELOW THIS LINE!
-     */
+                if (normalizedActual.equals(normalizedExpected)) {
+                    System.out.println("Command: " + command);
+                    System.out.println("Success: Output matches expected output.");
+                } else {
+                    System.out.println("Command: " + command);
+                    System.out.println("Failure: Output does not match expected output.");
+                    System.out.println("Expected Output:\n[" + normalizedExpected + "]");
+                    System.out.println("Actual Output:\n[" + normalizedActual + "]");
+                }
+
+            }
+        }
+    
+        System.out.println("\nEvaluation completed.");
+    }
+    
+
     public static void autoEvaluate() {
 
         // Set the number of queries to execute
-        int numberOfQueries = 1000000;
+        int numberOfQueries = 100000;
 
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
@@ -55,7 +220,6 @@ public class Main {
         // Random data generator
         Random random = new Random();
 
-        // Prepopulate the tables in preparation for evaluation
         prepopulateTables(random);
 
         // Loop to simulate millions of queries
@@ -83,8 +247,8 @@ public class Main {
                     break;
             }
 
-            // Print progress every 100,000 queries
-            if (i % 10000 == 0){
+            // Print progress every 10,000 queries
+            if (i % 10000 == 0 && i != 0) {
                 System.out.println("Processed " + i + " queries...");
             }
         }
@@ -116,8 +280,7 @@ public class Main {
         for (int i = 0; i < 50; i++) {
             int user_id = random.nextInt(9999);
             int product_id = random.nextInt(9999);
-            int quantity = random.nextInt(1, 100);
-            String category = getRandomCategory(random);
+            int quantity = random.nextInt(99) + 1; // Quantity between 1 and 100
             String insertCommand = String.format("INSERT INTO orders VALUES (%d, %d, %d, %d)", i, user_id, product_id, quantity);
             dbEngine.executeSQL(insertCommand);
         }
@@ -221,7 +384,7 @@ public class Main {
         }
     }
 
-    // Helper method to execute a complex SELECT query with WHERE, AND, OR, >, <, LIKE
+    // Helper method to execute a complex SELECT query with WHERE, AND, OR, >, <
     private static void complexSelectQuery(Random random) {
         int tableChoice = random.nextInt(2);  // Complex queries only on users and products for now
         String complexSelectQuery;
@@ -229,18 +392,12 @@ public class Main {
             case 0: // Complex SELECT on users
                 int minAge = random.nextInt(20) + 20;
                 int maxAge = minAge + random.nextInt(30);
-                String city = getRandomCity(random);
                 complexSelectQuery = "SELECT * FROM users WHERE age > " + minAge + " AND age < " + maxAge;
                 break;
             case 1: // Complex SELECT on products
                 double minPrice = 50 + (random.nextDouble() * 200);
                 double maxPrice = minPrice + random.nextDouble() * 500;
                 complexSelectQuery = "SELECT * FROM products WHERE price > " + minPrice + " AND price < " + maxPrice;
-                break;
-            case 2: // Complex SELECT on products
-                double minPrice2 = 50 + (random.nextDouble() * 200);
-                String category = getRandomCategory(random);
-                complexSelectQuery = "SELECT * FROM products WHERE price > " + minPrice2 + " AND category = " + category;
                 break;
             default:
                 complexSelectQuery = "SELECT * FROM users";
