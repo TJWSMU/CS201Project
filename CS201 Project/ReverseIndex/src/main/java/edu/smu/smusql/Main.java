@@ -66,7 +66,7 @@ public class Main {
         testCases.add(new TestCase(
             "Test Case 1: Create table and insert data",
             Arrays.asList(
-                "CREATE TABLE Employees (ID, Name, Age, Department)",
+                "CREATE TABLE Employees (ID INTEGER, Name STRING, Age INTEGER, Department STRING)",
                 "INSERT INTO Employees VALUES (1, 'Alice', 30, 'HR')",
                 "INSERT INTO Employees VALUES (2, 'Bob', 25, 'Engineering')",
                 "INSERT INTO Employees VALUES (3, 'Charlie', 35, 'HR')",
@@ -237,9 +237,9 @@ public class Main {
         }
     
         private static void initializeTables() {
-            dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
-            dbEngine.executeSQL("CREATE TABLE products (id, name, price, category)");
-            dbEngine.executeSQL("CREATE TABLE orders (id, user_id, product_id, quantity)");
+            dbEngine.executeSQL("CREATE TABLE users (id INTEGER, name STRING, age INTEGER, city STRING)");
+            dbEngine.executeSQL("CREATE TABLE products (id INTEGER, name STRING, price DOUBLE, category STRING)");
+            dbEngine.executeSQL("CREATE TABLE orders (id INTEGER, user_id STRING, product_id STRING, quantity INTEGER)");
         }
     
         private static void prepopulateTables() {
