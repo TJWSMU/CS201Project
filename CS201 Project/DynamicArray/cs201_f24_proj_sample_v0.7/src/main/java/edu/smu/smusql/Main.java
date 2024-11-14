@@ -33,24 +33,34 @@ public class Main {
     }
 
     public static void autoEvaluate() {
-
+        // Memory usage before populating tables
+        Runtime runtime = Runtime.getRuntime();
+        runtime.gc(); // Suggest garbage collection
+        long memoryBefore = runtime.totalMemory() - runtime.freeMemory();
+        System.out.println("Memory usage before populating tables: " + memoryBefore + " bytes");
+    
         // Set the number of queries to execute
         int numberOfQueries = 100000;
-
+    
         // Create tables
         dbEngine.executeSQL("CREATE TABLE users (id, name, age, city)");
         dbEngine.executeSQL("CREATE TABLE products (id, name, price, category)");
         dbEngine.executeSQL("CREATE TABLE orders (id, user_id, product_id, quantity)");
-
+    
         // Random data generator
         Random random = new Random();
-
+    
         prepopulateTables(random);
-
+    
+        // Memory usage after populating tables
+        long memoryAfterPopulate = runtime.totalMemory() - runtime.freeMemory();
+        System.out.println("Memory usage after populating tables: " + memoryAfterPopulate + " bytes");
+        System.out.println("Memory used for initial data population: " + (memoryAfterPopulate - memoryBefore) + " bytes");
+    
         // Loop to simulate millions of queries
         for (int i = 0; i < numberOfQueries; i++) {
             int queryType = random.nextInt(6);  // Randomly choose the type of query to execute
-
+    
             switch (queryType) {
                 case 0:  // INSERT query
                     insertRandomData(random);
@@ -71,14 +81,19 @@ public class Main {
                     complexUpdateQuery(random);
                     break;
             }
-
+    
             // Print progress every 100,000 queries
-            if (i % 10000 == 0){
+            if (i % 10000 == 0) {
                 System.out.println("Processed " + i + " queries...");
             }
         }
-
+    
         System.out.println("Finished processing " + numberOfQueries + " queries.");
+    
+        // Memory usage after processing all queries
+        long memoryAfterQueries = runtime.totalMemory() - runtime.freeMemory();
+        System.out.println("Memory usage after processing queries: " + memoryAfterQueries + " bytes");
+        System.out.println("Total memory increase due to queries: " + (memoryAfterQueries - memoryAfterPopulate) + " bytes");
     }
 
     private static void prepopulateTables(Random random) {
