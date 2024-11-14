@@ -460,4 +460,8 @@ public class Engine {
         }
         return whereClauseConditions;
     }
+
+    public LinearProbingHashMap<String, Table> getTables() {
+        return tables;
+    }
 }

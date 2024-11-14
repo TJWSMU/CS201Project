@@ -6,16 +6,15 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.ArrayList;
-import java.util.Map.Entry;
 
 /**
  * An abstract base class for hash map implementations.
  */
 public abstract class AbstractHashMap<K, V> implements Map<K, V> {
-    protected int n = 0;           // Number of entries in the map
-    protected int capacity;        // Capacity of the table
-    private int prime;             // Prime number for hash function
-    private long scale, shift;     // Shift and scale factors
+    protected int n = 0; // Number of entries in the map
+    protected int capacity; // Capacity of the table
+    private int prime; // Prime number for hash function
+    private long scale, shift; // Shift and scale factors
 
     /** Default values */
     private static final int DEFAULT_CAPACITY = 17;
@@ -61,7 +60,9 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public V get(Object key) {
+        if (key == null) return null;
         return bucketGet(hashValue((K) key), (K) key);
     }
 
@@ -74,14 +75,19 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public V remove(Object key) {
+        if (key == null) return null;
         return bucketRemove(hashValue((K) key), (K) key);
     }
 
     /** Abstract methods to be implemented by subclasses */
     protected abstract void createTable();
+
     protected abstract V bucketGet(int h, K k);
+
     protected abstract V bucketPut(int h, K k, V v);
+
     protected abstract V bucketRemove(int h, K k);
 
     /** Resize the table to have given capacity */
@@ -92,9 +98,13 @@ public abstract class AbstractHashMap<K, V> implements Map<K, V> {
         n = 0; // Reset size
         for (Entry<K, V> e : entries)
             put(e.getKey(), e.getValue());
+        System.out.println("Table resized to " + capacity + "current size:" + n);
     }
 
-    /** The following methods are part of the Map interface but are left to be implemented by subclasses */
+    /**
+     * The following methods are part of the Map interface but are left to be
+     * implemented by subclasses
+     */
 
     @Override
     public abstract Set<Entry<K, V>> entrySet();

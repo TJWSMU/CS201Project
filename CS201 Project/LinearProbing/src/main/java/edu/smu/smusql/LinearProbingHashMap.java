@@ -8,6 +8,11 @@ import java.util.Map.Entry;
 public class LinearProbingHashMap<K, V> extends AbstractHashMap<K, V> {
     private MapEntry<K, V>[] table;
     private MapEntry<K, V> DEFUNCT = new MapEntry<>(null, null); // Sentinel for deleted entries
+    private int collisions = 0;
+    private int totalProbeLength = 0;
+    private boolean useLinearProbing = true;
+    private int c1 = 1; // first constant for quadratic probing
+    private int c2 = 1; // second constant for quadratic probing
 
     // Constructors
     public LinearProbingHashMap() {
@@ -57,7 +62,12 @@ public class LinearProbingHashMap<K, V> extends AbstractHashMap<K, V> {
         return (table[index] == null || table[index] == DEFUNCT);
     }
 
-    // Linear probing
+    public int getCollisions() { return collisions; }
+    public double getAverageProbeLength() { 
+        return size() == 0 ? 0 : totalProbeLength / (double) size(); 
+    }
+
+    // Quadratic probing
     private int findSlot(int hash, K key) {
         int avail = -1;
         int index = hash;
@@ -65,52 +75,35 @@ public class LinearProbingHashMap<K, V> extends AbstractHashMap<K, V> {
 
         do {
             if (isAvailable(index)) {
-                if (avail == -1)
+                if (avail == -1) {
                     avail = index;
-                if (table[index] == null)
+                }
+                if (table[index] == null) {
                     break;
-            } else if (key.equals(table[index].getKey())) {
-                return index;
+                }
+            } else {
+                collisions++;
+                if (key.equals(table[index].getKey())) {
+                    return index;
+                }
             }
+
             probe++;
-            index = (hash + probe) % capacity;
+            totalProbeLength++;
+
+            if (useLinearProbing) {
+                index = (hash + probe) % capacity;
+            } else {
+                index = (int) (hash + c1 * probe + c2 * probe * probe) % capacity;
+            }
+
+            if (index < 0) {
+                index += capacity;
+            }
         } while (probe < capacity);
 
         return -(avail + 1);
     }
-
-    // Quadratic probing
-    // private int findSlot(int hash, K key) {
-    // int avail = -1;
-    // int index = hash;
-    // int probe = 0;
-    // int c1 = 1; // first constant for quadratic probing
-    // int c2 = 1; // second constant for quadratic probing
-
-    // do {
-    // if (isAvailable(index)) {
-    // if (avail == -1) {
-    // avail = index;
-    // }
-    // if (table[index] == null) {
-    // break;
-    // }
-    // } else if (key.equals(table[index].getKey())) {
-    // return index;
-    // }
-
-    // // Quadratic probing formula: h(k,i) = (h(k) + c1*i + c2*i^2) mod m
-    // probe++;
-    // index = (int) (hash + c1 * probe + c2 * probe * probe) % capacity;
-
-    // // Handle negative values from modulo
-    // if (index < 0) {
-    // index += capacity;
-    // }
-    // } while (probe < capacity);
-
-    // return -(avail + 1);
-    // }
 
     @Override
     protected V bucketGet(int hash, K key) {
@@ -153,5 +146,20 @@ public class LinearProbingHashMap<K, V> extends AbstractHashMap<K, V> {
             }
         }
         return buffer;
+    }
+
+    public void setLinearProbing() {
+        useLinearProbing = true;
+    }
+
+    public void setQuadraticProbing(int c1, int c2) {
+        useLinearProbing = false;
+        this.c1 = c1;
+        this.c2 = c2;
+    }
+
+    public void resetStatistics() {
+        collisions = 0;
+        totalProbeLength = 0;
     }
 }

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<probingResults>
+    <test loadFactor="0.5" probingType="linear" tableSize="1000">
+        <insertionTime>538</insertionTime>
+        <lookupTime>503</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.5" probingType="quadratic" tableSize="1000">
+        <insertionTime>203</insertionTime>
+        <lookupTime>241</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="linear" tableSize="1000">
+        <insertionTime>151</insertionTime>
+        <lookupTime>255</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="quadratic" tableSize="1000">
+        <insertionTime>110</insertionTime>
+        <lookupTime>192</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="linear" tableSize="1000">
+        <insertionTime>3981</insertionTime>
+        <lookupTime>122</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="quadratic" tableSize="1000">
+        <insertionTime>488</insertionTime>
+        <lookupTime>97</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.5" probingType="linear" tableSize="10000">
+        <insertionTime>610</insertionTime>
+        <lookupTime>94</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.5" probingType="quadratic" tableSize="10000">
+        <insertionTime>580</insertionTime>
+        <lookupTime>92</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="linear" tableSize="10000">
+        <insertionTime>911</insertionTime>
+        <lookupTime>132</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="quadratic" tableSize="10000">
+        <insertionTime>875</insertionTime>
+        <lookupTime>99</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="linear" tableSize="10000">
+        <insertionTime>3761</insertionTime>
+        <lookupTime>126</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="quadratic" tableSize="10000">
+        <insertionTime>3306</insertionTime>
+        <lookupTime>94</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.5" probingType="linear" tableSize="100000">
+        <insertionTime>5918</insertionTime>
+        <lookupTime>147</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.5" probingType="quadratic" tableSize="100000">
+        <insertionTime>3679</insertionTime>
+        <lookupTime>119</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="linear" tableSize="100000">
+        <insertionTime>6795</insertionTime>
+        <lookupTime>200</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.7" probingType="quadratic" tableSize="100000">
+        <insertionTime>6453</insertionTime>
+        <lookupTime>158</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="linear" tableSize="100000">
+        <insertionTime>41176</insertionTime>
+        <lookupTime>164</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+    <test loadFactor="0.9" probingType="quadratic" tableSize="100000">
+        <insertionTime>31738</insertionTime>
+        <lookupTime>132</lookupTime>
+        <collisions>0</collisions>
+        <avgProbeLength>0.0</avgProbeLength>
+    </test>
+</probingResults>

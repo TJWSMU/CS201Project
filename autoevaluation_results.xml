@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<evaluationResults>
+    <iteration number="1">
+        <queryCount>100000</queryCount>
+        <executionTime>64354059</executionTime>
+        <collisions>100150</collisions>
+        <averageProbeLength>0.0</averageProbeLength>
+    </iteration>
+    <iteration number="2">
+        <queryCount>100000</queryCount>
+        <executionTime>65616810</executionTime>
+        <collisions>100150</collisions>
+        <averageProbeLength>0.0</averageProbeLength>
+    </iteration>
+    <iteration number="3">
+        <queryCount>100000</queryCount>
+        <executionTime>66059823</executionTime>
+        <collisions>100150</collisions>
+        <averageProbeLength>0.0</averageProbeLength>
+    </iteration>
+</evaluationResults>
