@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class Engine {
     // Stores the tables in the database
-    private ChainHashMap<String, Table> tables = new ChainHashMap<>();
+    private HashMap<String, Table> tables = new HashMap<>();
 
     public String executeSQL(String query) {
         String[] tokens = tokenizeQuery(query);
@@ -93,7 +93,7 @@ public class Engine {
         }
 
         // Create a new row using ChainHashMap
-        ChainHashMap<String, String> row = new ChainHashMap<>();
+        HashMap<String, String> row = new HashMap<>();
         for (int i = 0; i < columns.size(); i++) {
             row.put(columns.get(i), values.get(i));
         }
@@ -141,14 +141,14 @@ public class Engine {
             }
         }
     
-        List<ChainHashMap<String, String>> filteredRows = new ArrayList<>();
+        List<HashMap<String, String>> filteredRows = new ArrayList<>();
         if (usesFirstColumn) {
-            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
+            HashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
             if (row != null && evaluateWhereConditions(row, whereClauseConditions)) {
                 filteredRows.add(row);
             }
         } else {
-            for (ChainHashMap<String, String> row : table.getRows().values()) {
+            for (HashMap<String, String> row : table.getRows().values()) {
                 if (evaluateWhereConditions(row, whereClauseConditions)) {
                     filteredRows.add(row);
                 }
@@ -172,7 +172,7 @@ public class Engine {
         // });
     
         // Append sorted rows to the result
-        for (ChainHashMap<String, String> row : filteredRows) {
+        for (HashMap<String, String> row : filteredRows) {
             for (String column : columns) {
                 result.append(row.getOrDefault(column, "NULL")).append("\t");
             }
@@ -236,13 +236,13 @@ public class Engine {
         }
 
         if (usesFirstColumn) {
-            ChainHashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
+            HashMap<String, String> row = table.getRowByFirstColumnValue(firstColumnValue);
             if (row != null && evaluateWhereConditions(row, whereClauseConditions)) {
                 row.put(setColumn, newValue);
                 affectedRows++;
             }
         } else {
-            for (ChainHashMap<String, String> row : table.getRows().values()) {
+            for (HashMap<String, String> row : table.getRows().values()) {
                 if (evaluateWhereConditions(row, whereClauseConditions)) {
                     row.put(setColumn, newValue);
                     affectedRows++;
@@ -294,7 +294,7 @@ public class Engine {
             // Full table scan if no indexed column specified in WHERE
             List<String> keysToRemove = new ArrayList<>();
             for (String key : table.getRows().keySet()) {
-                ChainHashMap<String, String> row = table.getRows().get(key);
+                HashMap<String, String> row = table.getRows().get(key);
                 if (evaluateWhereConditions(row, whereClauseConditions)) {
                     keysToRemove.add(key);
                     affectedRows++;
@@ -404,7 +404,7 @@ public class Engine {
     }
 
     // Method to evaluate where conditions
-    private boolean evaluateWhereConditions(Map<String, String> row, List<String[]> conditions) {
+    private boolean evaluateWhereConditions(HashMap<String, String> row, List<String[]> conditions) {
         boolean overallMatch = true;
         boolean nextConditionShouldMatch = true; // Default behavior for AND
 

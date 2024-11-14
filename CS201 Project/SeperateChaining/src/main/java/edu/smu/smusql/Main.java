@@ -208,11 +208,13 @@ public class Main {
     
     public class DatabaseAutoEvaluator {
 
-        private static final int NUMBER_OF_QUERIES = 400000;
-        private static final String[] QUERY_TYPES = {"INSERT", "UPDATE", "SELECT", "DELETE"};
+        private static final int NUMBER_OF_QUERIES = 100000;
+        private static final String[] QUERY_TYPES = {"INSERT", "SELECT", "UPDATE", "DELETE"};
         private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
         private static final Random RANDOM = new Random();
-    
+
+        private static final boolean TEST_WITH_COMPLEX = true;
+
         // Counters to track the number of rows in each table
         private static int userCount = 50;
         private static int productCount = 50;
@@ -253,7 +255,7 @@ public class Main {
             for (int i = 0; i < QUERIES_PER_TYPE; i++) {
                 executeQuery(queryType, i);
                 if (i % 5000 == 0 && i != 0) {
-                   // System.out.printf("Processed %d %s queries so far...%n", i, QUERY_TYPES[queryType]);
+                   System.out.printf("Processed %d %s queries so far...%n", i, QUERY_TYPES[queryType]);
                 }
             }
         }
@@ -261,8 +263,28 @@ public class Main {
         private static void executeQuery(int queryType, int count) {
             switch (queryType) {
                 case 0 -> insertRandomData(count);
-                case 1 -> executeUpdateQuery();
-                case 2 -> executeSelectQuerySimple();
+                case 1 -> {
+                    if(TEST_WITH_COMPLEX){
+                        if (RANDOM.nextBoolean()) { 
+                            executeSelectQuerySimple();
+                        } else {
+                            executeSelectQueryComplex();
+                        }
+                    } else {
+                        executeSelectQuerySimple();
+                    }
+                }
+                case 2 -> {
+                    if(TEST_WITH_COMPLEX){
+                        if (RANDOM.nextBoolean()) { 
+                            executeUpdateQuerySimple();
+                        } else {
+                            executeUpdateQueryComplex();
+                        }
+                    } else {
+                        executeUpdateQuerySimple();
+                    }
+                }
                 case 3 -> deleteRandomData();
             }
         }
@@ -288,30 +310,36 @@ public class Main {
             dbEngine.executeSQL(query);
         }
     
-        // private static void executeSelectQueryRange() {
-        //     String query = RANDOM.nextBoolean() ? "SELECT * FROM users WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
-        //             : "SELECT * FROM products WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
-        //     dbEngine.executeSQL(query);
-        // }
-
         private static void executeSelectQuerySimple() {
             String query = RANDOM.nextBoolean() ? "SELECT * FROM users WHERE id = " +  RANDOM.nextInt(userCount)
-                    : "SELECT * FROM products WHERE id = " + RANDOM.nextInt(productCount);
+            : "SELECT * FROM products WHERE id = " + RANDOM.nextInt(productCount);
             dbEngine.executeSQL(query);
         }
-    
-        private static void executeUpdateQuery() {
+        
+        private static void executeSelectQueryComplex() {
+            String query = RANDOM.nextBoolean() ? "SELECT * FROM users WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
+                    : "SELECT * FROM products WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
+            dbEngine.executeSQL(query);
+        }
+
+        private static void executeUpdateQuerySimple() {
             String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE id = " + RANDOM.nextInt(userCount)
                     : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE id = " + RANDOM.nextInt(productCount);
+            dbEngine.executeSQL(query);
+        }
+
+        private static void executeUpdateQueryComplex() {
+            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
+                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
             dbEngine.executeSQL(query);
         }
     
         private static void deleteRandomData() {
             String query;
             switch (RANDOM.nextInt(3)) {
-                case 0 -> query = "DELETE FROM users WHERE id = " + (--userCount);
-                case 1 -> query = "DELETE FROM products WHERE id = " + (--productCount);
-                case 2 -> query = "DELETE FROM orders WHERE id = " + (--orderCount);
+                case 0 -> query = "DELETE FROM users WHERE id = " + RANDOM.nextInt(userCount);
+                case 1 -> query = "DELETE FROM products WHERE id = " + RANDOM.nextInt(productCount);
+                case 2 -> query = "DELETE FROM orders WHERE id = " + RANDOM.nextInt(orderCount);
                 default -> throw new IllegalArgumentException("Invalid delete operation");
             }
             dbEngine.executeSQL(query);

@@ -1,8 +1,5 @@
 package edu.smu.smusql;
 
-
-import static edu.smu.smusql.AbstractHashMap.DEFAULT_CAPACITY;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,7 +11,7 @@ import java.util.Map.Entry;
 public class ChainHashMap<K, V> extends AbstractHashMap<K, V> {
     // Fixed-capacity array of UnsortedTableMap that serve as buckets
     private UnsortedTableMap<K, V>[] table;
-    //private static final int MAX_BUCKET_SIZE = 10000;
+    private static final int MAX_BUCKET_SIZE = 10;
     //private static final double LOAD_FACTOR_THRESHOLD = 0.75;
     /** Constructors */
 
@@ -91,15 +88,15 @@ public class ChainHashMap<K, V> extends AbstractHashMap<K, V> {
         return buffer;
     }
 
-    // @Override
-    // public V put(K key, V value) {
-    //     int bucketIndex = hashValue(key);
-    //     V answer = bucketPut(bucketIndex, key, value);
-    //     if (table[bucketIndex].size() > MAX_BUCKET_SIZE) { // Resize up if any bucket size is more tha max bucket size
-    //         resize(2 * capacity - 1);
-    //     }
-    //     return answer;
-    // }
+    @Override
+    public V put(K key, V value) {
+        int bucketIndex = hashValue(key);
+        V answer = bucketPut(bucketIndex, key, value);
+        if (table[bucketIndex].size() > MAX_BUCKET_SIZE) { // Resize up if any bucket size is more tha max bucket size
+            resize(2 * capacity - 1);
+        }
+        return answer;
+    }
 
     // @Override
     // public V put(K key, V value) {
