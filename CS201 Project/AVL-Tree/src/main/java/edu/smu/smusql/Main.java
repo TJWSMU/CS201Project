@@ -7,7 +7,6 @@ public class Main {
     static Engine dbEngine = new Engine();
 
     public static void main(String[] args) {
-
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("smuSQL version 0.5.1 2024-09-20");
@@ -26,17 +25,30 @@ public class Main {
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
                 System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
                 break;
-            } else if (query.equalsIgnoreCase("evaluate")) {
-                long startTime = System.nanoTime();
-                autoEvaluate();
-                long stopTime = System.nanoTime();
-                long elapsedTime = stopTime - startTime;
-                double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
-                System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                break;
+            } else if (query.toLowerCase().startsWith("evaluate ")) {
+                try {
+                    // Extract the numbers after "evaluate "
+                    String[] parts = query.split("\\s+");
+                    if (parts.length != 3) {
+                        System.out.println("Usage: evaluate <insert_count> <select_count>");
+                        continue;
+                    }
+                    int insertOperations = Integer.parseInt(parts[1]);
+                    int selectOperations = Integer.parseInt(parts[2]);
+                    
+                    long startTime = System.nanoTime();
+                    customEvaluate(insertOperations, selectOperations);
+                    long stopTime = System.nanoTime();
+                    long elapsedTime = stopTime - startTime;
+                    double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
+                    System.out.println("Total time elapsed: " + elapsedTimeInSecond + " seconds");
+                    break;
+                } catch (NumberFormatException e) {
+                    System.out.println("Please provide valid numbers (e.g., 'evaluate 1000 500')");
+                }
+            } else {
+                System.out.println(dbEngine.executeSQL(query));
             }
-
-            System.out.println(dbEngine.executeSQL(query));
         }
         scanner.close();
     }
@@ -434,5 +446,92 @@ public class Main {
     private static String getRandomCategory(Random random) {
         String[] categories = {"Electronics", "Appliances", "Clothing", "Furniture", "Toys", "Sports", "Books", "Beauty", "Garden"};
         return categories[random.nextInt(categories.length)];
+    }
+
+    public static void customEvaluate(int insertOperations, int selectOperations) {
+        System.out.println("Starting custom evaluation with " + insertOperations + 
+                          " INSERT and " + selectOperations + " SELECT operations...");
+        
+        // Reset the Engine's state
+        dbEngine = new Engine();
+        
+        // Create initial table
+        dbEngine.executeSQL("CREATE TABLE testTable (ID, Name, Age, Department)");
+        
+        Random random = new Random();
+        long insertTime = 0;
+        long selectTime = 0;
+        
+        // First do all inserts
+        System.out.println("\nPerforming INSERT operations...");
+        for (int i = 0; i < insertOperations; i++) {
+            int id = i;  // Use i as ID to ensure unique IDs
+            String name = "User" + id;
+            int age = 20 + random.nextInt(40);
+            String dept = getRandomDepartment(random);
+            
+            long startTime = System.nanoTime();
+            String insertQuery = String.format("INSERT INTO testTable VALUES (%d, '%s', %d, '%s')", 
+                id, name, age, dept);
+            dbEngine.executeSQL(insertQuery);
+            long endTime = System.nanoTime();
+            
+            insertTime += (endTime - startTime);
+            
+            // Print progress every 1000 operations
+            if (i % 1000 == 0 && i > 0) {
+                double avgInsertTime = (double) insertTime / (i + 1) / 1_000_000;
+                System.out.printf("Completed %d INSERTs. Average time: %.3f ms%n", 
+                    i + 1, avgInsertTime);
+            }
+        }
+        
+        // Then do selects with ID-only lookups
+        System.out.println("\nPerforming SELECT operations (ID lookups only)...");
+        int reportInterval = Math.max(1, selectOperations / 10);
+        
+        for (int i = 0; i < selectOperations; i++) {
+            // Only do ID lookups as they should be O(log n)
+            int targetId = random.nextInt(insertOperations);
+            
+            long startTime = System.nanoTime();
+            String selectQuery = "SELECT * FROM testTable WHERE ID = " + targetId;
+            dbEngine.executeSQL(selectQuery);
+            long endTime = System.nanoTime();
+            
+            selectTime += (endTime - startTime);
+            
+            // Print progress at regular intervals
+            if (i % reportInterval == 0 || i == selectOperations - 1) {
+                double avgSelectTime = (double) selectTime / (i + 1) / 1_000_000;
+                double progressPercent = ((double) i / selectOperations) * 100;
+                System.out.printf("Progress: %.1f%% (%d/%d). Average time: %.3f ms%n", 
+                    progressPercent, i + 1, selectOperations, avgSelectTime);
+                
+                // If average time is too high, abort
+                if (avgSelectTime > 100) {  // More than 100ms average is too slow
+                    System.out.println("Performance warning: SELECT operations are unusually slow!");
+                    break;
+                }
+            }
+        }
+        
+        // Print final results
+        System.out.println("\nEvaluation completed:");
+        if (insertOperations > 0) {
+            double avgInsertTime = (double) insertTime / insertOperations / 1_000_000;
+            System.out.printf("INSERT: %d operations, Average time: %.3f ms%n", 
+                insertOperations, avgInsertTime);
+        }
+        if (selectOperations > 0) {
+            double avgSelectTime = (double) selectTime / selectOperations / 1_000_000;
+            System.out.printf("SELECT: %d operations, Average time: %.3f ms%n", 
+                selectOperations, avgSelectTime);
+        }
+    }
+
+    private static String getRandomDepartment(Random random) {
+        String[] departments = {"HR", "Engineering", "Finance", "Sales", "Marketing", "Operations"};
+        return departments[random.nextInt(departments.length)];
     }
 }
