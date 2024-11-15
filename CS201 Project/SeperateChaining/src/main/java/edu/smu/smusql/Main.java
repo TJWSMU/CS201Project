@@ -66,7 +66,7 @@ public class Main {
         testCases.add(new TestCase(
             "Test Case 1: Create table and insert data",
             Arrays.asList(
-                "CREATE TABLE Employees (ID INTEGER, Name STRING, Age INTEGER, Department STRING)",
+                "CREATE TABLE Employees (ID, Name, Age, Department)",
                 "INSERT INTO Employees VALUES (1, 'Alice', 30, 'HR')",
                 "INSERT INTO Employees VALUES (2, 'Bob', 25, 'Engineering')",
                 "INSERT INTO Employees VALUES (3, 'Charlie', 35, 'HR')",
