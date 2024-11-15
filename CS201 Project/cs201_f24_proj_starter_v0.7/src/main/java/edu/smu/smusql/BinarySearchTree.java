@@ -17,7 +17,7 @@ public class BinarySearchTree {
     }
 
     private Node root;
-    private Map<String, Integer> columns = new HashMap<>();
+    private Map<String, Integer> columns = new HashMap<>(); //column name as key, index in array as value
     private String[] columnNames;
     private String leftMost;
     private String rightMost;
@@ -25,7 +25,6 @@ public class BinarySearchTree {
     public BinarySearchTree(String[] columnNames) {
         root = null;
         for (int i = 0; i < columnNames.length; i++) {
-            columnNames[i] = columnNames[i].trim();
             columns.put(columnNames[i], i);
         }
         this.columnNames = columnNames;
@@ -58,45 +57,80 @@ public class BinarySearchTree {
         return root;
     }
 
-    // public void delete(String key) {
-    //     root = deleteRec(root, key);
-    // }
+    public int update(int index, String newValue, 
+    int index1, String value1, String operator1, String logic, 
+    int index2, String value2, String operator2) {
+        int[] count = new int[1]; // Use an array to keep track of the count
+        root = updateRec(root, index, newValue, index1, value1, operator1, logic, index2, value2, operator2, count);
+        return count[0];
+    }
 
-    // private Node deleteRec(Node root, String key) {
-    //     if (root == null) {
-    //         return root;
-    //     }
+    private Node updateRec(Node root, int index, String newValue, int index1, String value1, String operator1, String logic, int index2, String value2, String operator2, int[] count) {
+        if (root == null) {
+            return root;
+        }
+    
+        root.left = updateRec(root.left, index, newValue, index1, value1, operator1, logic, index2, value2, operator2, count);
+        root.right = updateRec(root.right, index, newValue, index1, value1, operator1, logic, index2, value2, operator2, count);
+    
+        boolean condition1 = matchesCondition(root.data[index1], value1, operator1);
+        boolean condition2 = logic != null ? matchesCondition(root.data[index2], value2, operator2) : false;
+    
+        boolean shouldUpdate = logic == null ? condition1 : (logic.equals("AND") ? (condition1 && condition2) : (condition1 || condition2));
+    
+        if (shouldUpdate) {
+            count[0]++; // Increment the count of updated nodes
+            root.data[index] = newValue;
+        }
+    
+        return root;
+    }
 
-    //     if (key.compareTo(root.data[0]) < 0) {
-    //         root.left = deleteRec(root.left, key);
-    //     } else if (key.compareTo(root.data[0]) > 0) {
-    //         root.right = deleteRec(root.right, key);
-    //     } else {
-    //         // Node with only one child or no child
-    //         if (root.left == null) {
-    //             return root.right;
-    //         } else if (root.right == null) {
-    //             return root.left;
-    //         }
-
-    //         // Node with two children: Get the inorder successor (smallest in the right subtree)
-    //         root.data = minValue(root.right);
-
-    //         // Delete the inorder successor
-    //         root.right = deleteRec(root.right, root.data[0]);
-    //     }
-
-    //     return root;
-    // }
-
-    // private String[] minValue(Node root) {
-    //     String[] minv = root.data;
-    //     while (root.left != null) {
-    //         minv = root.left.data;
-    //         root = root.left;
-    //     }
-    //     return minv;
-    // }
+    public int delete(int index1, String value1, String operator1, String logic, int index2, String value2, String operator2) {
+        int[] count = new int[1]; // Use an array to keep track of the count
+        root = deleteRec(root, index1, value1, operator1, logic, index2, value2, operator2, count);
+        return count[0];
+    }
+    
+    private Node deleteRec(Node root, int index1, String value1, String operator1, String logic, int index2, String value2, String operator2, int[] count) {
+        if (root == null) {
+            return root;
+        }
+    
+        root.left = deleteRec(root.left, index1, value1, operator1, logic, index2, value2, operator2, count);
+        root.right = deleteRec(root.right, index1, value1, operator1, logic, index2, value2, operator2, count);
+    
+        boolean condition1 = matchesCondition(root.data[index1], value1, operator1);
+        boolean condition2 = logic != null ? matchesCondition(root.data[index2], value2, operator2) : false;
+    
+        boolean shouldDelete = logic == null ? condition1 : (logic.equals("AND") ? (condition1 && condition2) : (condition1 || condition2));
+    
+        if (shouldDelete) {
+            count[0]++; // Increment the count of deleted nodes
+            if (root.left == null) {
+                return root.right;
+            } else if (root.right == null) {
+                return root.left;
+            }
+    
+            // Node with two children: Get the inorder successor (smallest in the right subtree)
+            root.data = minValue(root.right);
+    
+            // Delete the inorder successor
+            root.right = deleteRec(root.right, index1, root.data[index1], "=", null, -1, null, null, count);
+        }
+    
+        return root;
+    }
+    
+    private String[] minValue(Node root) {
+        String[] minv = root.data;
+        while (root.left != null) {
+            minv = root.left.data;
+            root = root.left;
+        }
+        return minv;
+    }
 
     public boolean search(String key) {
         return searchRec(root, key);
@@ -216,7 +250,7 @@ public class BinarySearchTree {
     private void searchAndPrintAndRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, StringBuilder result) {
         if (node != null) {
             searchAndPrintAndRec(node.left, index1, operator1, value1, index2, operator2, value2, result);
-            if (matchesCondition(node.data[index1], operator1, value1) && matchesCondition(node.data[index2], operator2, value2)) {
+            if (matchesCondition(node.data[index1], value1, operator1) && matchesCondition(node.data[index2], value2, operator2)) {
                 result.append(String.join("\t", node.data)).append("\n");
             }
             searchAndPrintAndRec(node.right, index1, operator1, value1, index2, operator2, value2, result);
@@ -232,147 +266,17 @@ public class BinarySearchTree {
     private void searchAndPrintOrRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, StringBuilder result) {
         if (node != null) {
             searchAndPrintOrRec(node.left, index1, operator1, value1, index2, operator2, value2, result);
-            if (matchesCondition(node.data[index1], operator1, value1) || matchesCondition(node.data[index2], operator2, value2)) {
+            if (matchesCondition(node.data[index1], value1, operator1) || matchesCondition(node.data[index2], value2, operator2)) {
                 result.append(String.join("\t", node.data)).append("\n");
             }
             searchAndPrintOrRec(node.right, index1, operator1, value1, index2, operator2, value2, result);
         }
     }
 
-    public int delete(String column1, String operator1, String value1, String column2, String operator2, String value2) {
-        Integer index1 = getColumns().get(column1);
-        Integer index2 = column2 != null ? getColumns().get(column2) : null;
-
-        if (index1 == null || (column2 != null && index2 == null)) {
-            return 0; // Column not found
-        }
-
-        int[] count = {0};
-        if (column2 == null) {
-            root = deleteRec(root, index1, operator1, value1, count);
-        } else {
-            root = deleteRec(root, index1, operator1, value1, index2, operator2, value2, count);
-        }
-        return count[0];
-    }
-
-
-    private Node deleteRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, int[] count) {
-        if (node == null) {
-            return null;
-        }
-
-        node.left = deleteRec(node.left, index1, operator1, value1, index2, operator2, value2, count);
-        node.right = deleteRec(node.right, index1, operator1, value1, index2, operator2, value2, count);
-
-        if (matchesCondition(node.data[index1], operator1, value1) && matchesCondition(node.data[index2], operator2, value2)) {
-            count[0]++;
-            return deleteNode(node);
-        }
-
-        return node;
-    }
-
-    private Node deleteNode(Node node) {
-        if (node.left == null) {
-            return node.right;
-        } else if (node.right == null) {
-            return node.left;
-        }
-    
-        Node minNode = findMin(node.right);
-        node.data = minNode.data;
-        node.right = deleteRec(node.right, 0, "=", minNode.data[0], 0, "=", minNode.data[0], new int[1]);
-        return node;
-    }
-    
-    private Node findMin(Node node) {
-        while (node.left != null) {
-            node = node.left;
-        }
-        return node;
-    }
-
-    public int delete(String condition1) {
-        String[] parts1 = parseCondition(condition1);
-        Integer index1 = getColumns().get(parts1[0]);
-        String operator1 = parts1[1];
-        String value1 = parts1[2];
-
-        if (index1 == null) {
-            return 0; // Column not found
-        }
-
-        int[] count = {0};
-        root = deleteRec(root, index1, operator1, value1, count);
-        return count[0];
-    }
-
-    public int delete(String condition1, String condition2, boolean isAnd) {
-        String[] parts1 = parseCondition(condition1);
-        String[] parts2 = parseCondition(condition2);
-        int index1 = getColumns().get(parts1[0]);
-        String operator1 = parts1[1];
-        String value1 = parts1[2];
-        int index2 = getColumns().get(parts2[0]);
-        String operator2 = parts2[1];
-        String value2 = parts2[2];
-
-        if (index1 == -1 || index2 == -1) {
-            return 0; // Column not found
-        }
-
-        int[] count = {0};
-        root = deleteRec(root, index1, operator1, value1, index2, operator2, value2, count, isAnd);
-        return count[0];
-    }
-
-    private Node deleteRec(Node node, int index1, String operator1, String value1, int[] count) {
-        if (node == null) {
-            return null;
-        }
-
-        node.left = deleteRec(node.left, index1, operator1, value1, count);
-        node.right = deleteRec(node.right, index1, operator1, value1, count);
-
-        if (matchesCondition(node.data[index1], operator1, value1)) {
-            count[0]++;
-            return deleteNode(node);
-        }
-
-        return node;
-    }
-
-    private Node deleteRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, int[] count, boolean isAnd) {
-        if (node == null) {
-            return null;
-        }
-
-        node.left = deleteRec(node.left, index1, operator1, value1, index2, operator2, value2, count, isAnd);
-        node.right = deleteRec(node.right, index1, operator1, value1, index2, operator2, value2, count, isAnd);
-
-        boolean condition1Matches = matchesCondition(node.data[index1], operator1, value1);
-        boolean condition2Matches = matchesCondition(node.data[index2], operator2, value2);
-
-        if ((isAnd && condition1Matches && condition2Matches) || (!isAnd && (condition1Matches || condition2Matches))) {
-            count[0]++;
-            return deleteNode(node);
-        }
-
-        return node;
-    }
-
-    private String[] parseCondition(String condition) {
-        String[] parts = condition.split(" ");
-        return new String[]{parts[0], parts[1], parts[2]};
-    }
-
-    private boolean matchesCondition(String data, String operator, String value) {
+    private boolean matchesCondition(String data, String value, String operator) {
         switch (operator) {
             case "=":
                 return data.equals(value);
-            case "!=":
-                return !data.equals(value);
             case "<":
                 return data.compareTo(value) < 0;
             case ">":
@@ -385,37 +289,35 @@ public class BinarySearchTree {
                 return false;
         }
     }
+    
 
     @Override
     public String toString() {
-        String result = "";
+        StringBuilder sb = new StringBuilder();
 
         // Append column names separated by a tab
         if (columnNames != null && columnNames.length > 0) {
             for (int i = 0; i < columnNames.length; i++) {
-                result += columnNames[i];
+                sb.append(columnNames[i]);
                 if (i < columnNames.length - 1) {
-                    result += "\t";
+                    sb.append("\t");
                 }
             }
-            result += "\n";
+            sb.append("\n");
         }
 
         // Append the data from the tree
-        result = toStringRec(root, result);
-        return result;
+        toStringRec(root, sb);
+        return sb.toString();
     }
 
-    private String toStringRec(Node node, String result) {
+    private void toStringRec(Node node, StringBuilder sb) {
         if (node != null) {
-            result = toStringRec(node.left, result);
-            result += String.join("\t", node.data) + "\n";
-            result = toStringRec(node.right, result);
+            toStringRec(node.left, sb);
+            sb.append(String.join("\t", node.data)).append("\n");
+            toStringRec(node.right, sb);
         }
-        return result;
     }
 
-    public static void main(String[] args) {
-        
-    }
+    
 }

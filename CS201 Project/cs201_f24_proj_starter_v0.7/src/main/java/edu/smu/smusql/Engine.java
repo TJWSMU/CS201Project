@@ -44,66 +44,88 @@ public class Engine {
         //Ensure the input has the correct number of columns
         String values = Parser.queryBetweenParentheses(tokens, 4);
         String[] row = values.split(",");
-        for (int i = 0; i < row.length; i++) {
-            row[i] = row[i].trim();
-        }
         if (row.length != table.getColumns().size()) {
             return "ERROR: Incorrect number of columns";
         }
-
+        //Remove leading and trailing whitespace and single quotes from each value
+        for (int i = 0; i < row.length; i++) {
+            row[i] = row[i].trim();
+            row[i] = removeSingleQuotes(row[i]);
+        }
+        
         //Insert the row into table
         table.insert(row);
 
-        return "Row inserted into table " + tableName;
+        return "Row inserted into " + tableName;
     }
 
+    private String removeSingleQuotes(String value) {
+        if (value.startsWith("'") && value.endsWith("'")) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
+    }
+    //Delete from table where column = value || && column = value
     public String delete(String[] tokens) {
-        // Check for correct syntax
-        if (!tokens[1].toUpperCase().equals("FROM") || !tokens[3].toUpperCase().equals("WHERE")) {
+        //Check for correct syntax
+        if (!tokens[1].toUpperCase().equals("FROM") || 
+            !tokens[3].toUpperCase().equals("WHERE")) {
             return "ERROR: Invalid DELETE syntax";
         }
-    
+
+        //Get the table
         String tableName = tokens[2];
         BinarySearchTree table = tableList.get(tableName);
-    
-        // Return error message if table does not exist
         if (table == null) {
-            return "ERROR: Table " + tableName + " does not exist";
+            return "ERROR: Table does not exist";
         }
-    
-        // If tokens.length == 7, then there is 1 conditional
+
+        //Get the column name and value
+        String column = tokens[4];
+        column = removeSingleQuotes(column);
+        String operator = tokens[5];
+        String value = tokens[6];
+        value = removeSingleQuotes(value);
+        //Get the index of the column name
+        int index = table.getColumns().getOrDefault(column, -1);
+        if (index == -1) {
+            return "ERROR: Column does not exist";
+        }
+
+        //Store the number of rows deleted
+        int rowsDeleted = 0;
+
         if (tokens.length == 7) {
-            String column1 = tokens[4];
-            String operator1 = tokens[5];
-            String value1 = tokens[6];
-    
-            // Delete the rows that match the condition
-            int rowsDeleted = table.delete(column1, operator1, value1, null, null, null);
-            return rowsDeleted + " rows deleted from table " + tableName;
-    
-        // If tokens.length == 11, then there are 2 conditionals
-        } else if (tokens.length == 11) {
-            String column1 = tokens[4];
-            String operator1 = tokens[5];
-            String value1 = tokens[6];
+            rowsDeleted = table.delete(index, value, operator, null, -1, null, null);
+        }
+
+        if (tokens.length == 11) {
             String logic = tokens[7].toUpperCase();
             String column2 = tokens[8];
+            column2 = removeSingleQuotes(column2);
             String operator2 = tokens[9];
             String value2 = tokens[10];
-    
-            // Delete the rows that match both conditions
-            int rowsDeleted;
-            if (logic.equals("AND")) {
-                rowsDeleted = table.delete(column1, operator1, value1, column2, operator2, value2);
-            } else if (logic.equals("OR")) {
-                rowsDeleted = table.delete(column1, operator1, value1, column2, operator2, value2);
-            } else {
-                return "ERROR: Invalid logical operator";
+            value2 = removeSingleQuotes(value2);
+            //Get the index of the column name
+            int index2 = table.getColumns().getOrDefault(column2, -1);
+            if (index2 == -1) {
+                return "ERROR: Column does not exist";
             }
-            return rowsDeleted + " rows deleted from table " + tableName;
+
+            switch (logic) {
+                case "AND":
+                    rowsDeleted = table.delete(index, value, operator, "AND", index2, value2, operator2);
+                    break;
+                case "OR":
+                    rowsDeleted = table.delete(index, value, operator,"OR", index2, value2, operator2);
+                    break;
+                default:
+                    return "ERROR: Invalid logic operator";
+            }
         }
-    
-        return "ERROR: Invalid DELETE syntax";
+
+        return "Rows deleted from " + tableName + ". " + rowsDeleted + " rows affected.";
+
     }
 
     public String select(String[] tokens) {
@@ -132,13 +154,14 @@ public class Engine {
         //If token.length == 8, then there is 1 conditional
         } else if (tokens.length == 8) {
             String column = tokens[5];
+            column = removeSingleQuotes(column);
             String operator = tokens[6];
             String value = tokens[7];
+            value = removeSingleQuotes(value);
             //Get the index of the column name
-            int index = table.getColumns().get(column);
-            if (value == null) {
-                // Handle the null case, e.g., throw an exception or use a default value
-                throw new NullPointerException("Column" + column + " does not exist.");
+            int index = table.getColumns().getOrDefault(column, -1);
+            if (index == -1) {
+                return "ERROR: Column does not exist";
             }
 
             switch (operator) {
@@ -158,15 +181,22 @@ public class Engine {
             }
         } else if (tokens.length == 12) {
             String column1 = tokens[5];
+            column1 = removeSingleQuotes(column1);
             String operator1 = tokens[6];
             String value1 = tokens[7];
+            value1 = removeSingleQuotes(value1);
             String logic = tokens[8].toUpperCase();
             String column2 = tokens[9];
+            column2 = removeSingleQuotes(column2);
             String operator2 = tokens[10];
             String value2 = tokens[11];
+            value2 = removeSingleQuotes(value2);
             //Get the index of the column name
-            int index1 = table.getColumns().get(column1);
-            int index2 = table.getColumns().get(column2);
+            int index1 = table.getColumns().getOrDefault(column1, -1);
+            int index2 = table.getColumns().getOrDefault(column2, -1);
+            if (index1 == -1 || index2 == -1) {
+                return "ERROR: Column does not exist";
+            }
 
             switch (logic) {
                 case "AND":
@@ -180,25 +210,99 @@ public class Engine {
 
         return "ERROR: Invalid SELECT syntax";
     }
+
     public String update(String[] tokens) {
         //TODO
-        return "not implemented";
+        //Check for correct syntax
+        if (!tokens[2].toUpperCase().equals("SET") ||
+            !tokens[4].equals("=") || 
+            !tokens[6].toUpperCase().equals("WHERE") ||
+            tokens.length < 10) {
+            return "ERROR: Invalid UPDATE syntax";
+        }
+
+        //Get the table
+        String tableName = tokens[1];
+        BinarySearchTree table = tableList.get(tableName);
+        if (table == null) {
+            return "ERROR: Table does not exist";
+        }
+
+        //Check the column to be updated
+        String updateColumn = tokens[3];
+        int index = table.getColumns().getOrDefault(updateColumn, -1);
+        if (index == -1) {
+            return "ERROR: Column does not exist";
+        }
+        //Get the new value
+        String newValue = tokens[5];
+        newValue = removeSingleQuotes(newValue);
+
+        //Get the column name and value that needs to be checked
+        String column = tokens[7];
+        column = removeSingleQuotes(column);
+        String operator = tokens[8];
+        String value = tokens[9];
+        value = removeSingleQuotes(value);
+
+        //Get the index of the column name
+        int index1 = table.getColumns().getOrDefault(column, -1);
+        if (index1 == -1) {
+            return "ERROR: Column does not exist";
+        }
+
+        //Store the number of rows updated
+        int rowsUpdated = 0;
+
+        if (tokens.length == 10) {
+            rowsUpdated = table.update(index, newValue, index1, value, operator, null, -1, null, null);
+        } else if (tokens.length == 14) {
+            String logic = tokens[10].toUpperCase();
+            String column2 = tokens[11];
+            column2 = removeSingleQuotes(column2);
+            String operator2 = tokens[12];
+            String value2 = tokens[13];
+            value2 = removeSingleQuotes(value2);
+            //Get the index of the column name
+            int index2 = table.getColumns().getOrDefault(column2, -1);
+            if (index2 == -1) {
+                return "ERROR: Column does not exist";
+            }
+
+            switch (logic) {
+                case "AND":
+                    rowsUpdated = table.update(index, newValue, index1, value, operator, "AND", index2, value2, operator2);
+                    break;
+                case "OR":
+                    rowsUpdated = table.update(index, newValue, index1, value, operator, "OR", index2, value2, operator2);
+                    break;
+                default:
+                    return "ERROR: Invalid logic operator";
+            }
+        }
+
+        
+        return "Rows updated in " + tableName + ". " + rowsUpdated + " rows affected.";
     }
     public String create(String[] tokens) {
-        //Check if this table already exists
-        String tableName = tokens[2];
-        if (tableList.containsKey(tableName)) {
-            return "ERROR: Table already exists";
-        }
 
         //Check for correct syntax
         if (!tokens[1].toUpperCase().equals("TABLE")) {
             return "ERROR: Invalid CREATE TABLE syntax";
         }
 
-        // Get the columns
+        //Check if this table already exists
+        String tableName = tokens[2];
+        if (tableList.containsKey(tableName)) {
+            return "ERROR: Table already exists";
+        }
+
+        // Get the columns and trim whitespace
         String columns = Parser.queryBetweenParentheses(tokens, 3);
         String[] columnNames = columns.split(",");
+        for (int i = 0; i < columnNames.length; i++) {
+            columnNames[i] = columnNames[i].trim();
+        }
 
         // Add the table to the database
         BinarySearchTree newTable = new BinarySearchTree(columnNames);
