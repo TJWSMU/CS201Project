@@ -87,37 +87,89 @@ public class Engine {
     }
 
     public String insert(String[] tokens) {
-        if (tokens.length < 5 || !tokens[1].equalsIgnoreCase("INTO")) {
+        // Check minimum length and syntax
+        if (tokens == null || tokens.length < 5 || !tokens[1].equalsIgnoreCase("INTO")) {
             return "ERROR: Invalid INSERT INTO syntax";
         }
-
+    
+        // Check table name
         String tableName = tokens[2];
-
+        if (tableName == null || tableName.isEmpty()) {
+            return "ERROR: Table name is missing in INSERT statement";
+        }
+    
         // Retrieve table
         Table table = tables.get(tableName);
         if (table == null) {
             return "ERROR: No such table: " + tableName;
         }
+    
+        // Get values list between parentheses
+        String valueList;
+        try {
+            valueList = queryBetweenParentheses(tokens, 4);
+        } catch (IllegalArgumentException e) {
+            return "ERROR: Values list is missing or improperly formatted"; 
+        }
 
-        String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses
+        if (valueList == null || valueList.isEmpty()) {
+            return "ERROR: Values list is missing or improperly formatted";
+        }
+    
+        // Split values and trim each one
         List<String> values = Arrays.asList(valueList.split(","));
         values.replaceAll(String::trim);
-
+    
+        // Retrieve column list from the table
         List<String> columns = table.getColumns();
-
         if (values.size() != columns.size()) {
-            return "ERROR: Column count doesn't match value count";
+            return "ERROR: Column count (" + columns.size() + ") doesn't match value count (" + values.size() + ")";
         }
-
-        // Create a new row
+    
+        // Create a new row and validate each value based on column type
         Map<String, String> row = new HashMap<>();
+        Map<String, String> columnTypes = table.getColumnTypes();
+        
         for (int i = 0; i < columns.size(); i++) {
-            row.put(columns.get(i), values.get(i).replaceAll("['\"]", ""));
+            String columnName = columns.get(i);
+            String columnType = columnTypes.get(columnName);
+            String value = values.get(i).replaceAll("['\"]", ""); // Remove surrounding quotes
+    
+            // Validate data type if specified
+            if (columnType != null) {
+                switch (columnType.toUpperCase()) {
+                    case "INTEGER":
+                        try {
+                            Integer.parseInt(value);
+                        } catch (NumberFormatException e) {
+                            return "ERROR: Invalid integer value for column " + columnName + ": " + value;
+                        }
+                        break;
+                    case "DOUBLE":
+                        try {
+                            Double.parseDouble(value);
+                        } catch (NumberFormatException e) {
+                            return "ERROR: Invalid double value for column " + columnName + ": " + value;
+                        }
+                        break;
+                    case "STRING":
+                        // Strings require no conversion; just ensure they're not null
+                        if (value == null) {
+                            return "ERROR: Null value for STRING column " + columnName;
+                        }
+                        break;
+                    default:
+                        return "ERROR: Unsupported data type for column " + columnName;
+                }
+            }
+    
+            row.put(columnName, value);
         }
-
+    
+        // Add the row to the table
         return table.addRow(row);
     }
-
+    
     public String select(String[] tokens) {
         if (tokens.length < 4 || !tokens[2].equalsIgnoreCase("FROM")) {
             return "ERROR: Invalid SELECT syntax";
@@ -168,15 +220,15 @@ public class Engine {
         if (tokens.length < 6 || !tokens[2].equalsIgnoreCase("SET")) {
             return "ERROR: Invalid UPDATE syntax";
         }
-
+    
         String tableName = tokens[1];
-
+    
         // Retrieve table
         Table table = tables.get(tableName);
         if (table == null) {
             return "ERROR: No such table: " + tableName;
         }
-
+    
         // Parse SET clause
         int whereIndex = -1;
         StringBuilder setClauseBuilder = new StringBuilder();
@@ -188,7 +240,7 @@ public class Engine {
             setClauseBuilder.append(tokens[i]).append(" ");
         }
         String setClause = setClauseBuilder.toString().trim();
-
+    
         // Parse SET expressions (can have multiple assignments)
         Map<String, String> setExpressions = new HashMap<>();
         String[] assignments = setClause.split(",");
@@ -201,28 +253,38 @@ public class Engine {
             String value = parts[1].trim().replaceAll("['\"]", "");
             setExpressions.put(column, value);
         }
-
+    
+        // Validate columns in SET expressions
+        List<String> validColumns = table.getColumns();
+        for (String column : setExpressions.keySet()) {
+            if (!validColumns.contains(column)) {
+                return "ERROR: Invalid column '" + column + "' in SET clause.";
+            }
+        }
+    
         List<String[]> whereClauseConditions = new ArrayList<>();
-
+    
         // Parse WHERE clause if present
         if (whereIndex != -1) {
             whereClauseConditions = parseWhereClause(tokens, whereIndex + 1); // Start parsing after "WHERE"
         }
-
+    
         // Evaluate WHERE conditions
         List<Map<String, String>> filteredRows = evaluateWhereConditions(table, whereClauseConditions);
         if (filteredRows.isEmpty()) {
             return "No rows match the specified WHERE conditions in table " + tableName + ".";
         }
+    
         // Update rows using the updateRow method
         int affectedRows = 0;
         for (Map<String, String> row : filteredRows) {
             table.updateRow(row, setExpressions);
             affectedRows++;
         }
-
-        return "Table "+tableName+" updated. "+ affectedRows +" rows affected.";
+    
+        return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
+    
 
     public String delete(String[] tokens) {
         if (tokens.length < 3 || !tokens[1].equalsIgnoreCase("FROM")) {

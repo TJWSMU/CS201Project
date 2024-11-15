@@ -41,6 +41,10 @@ public class Table {
         return columns;
     }
 
+    public Map<String, String> getColumnTypes() {
+        
+        return columnTypes;
+    }
     public String getColumnType(String column) {
         return columnTypes.get(column);
     }
@@ -280,7 +284,7 @@ public class Table {
         for (String column : newValues.keySet()) {
             removeRowFromIndex(row, column);
         }
-    
+        //removeRowFromIndices(row);
         // Update the row values
         for (Map.Entry<String, String> entry : newValues.entrySet()) {
             row.put(entry.getKey(), entry.getValue());
@@ -290,6 +294,7 @@ public class Table {
         for (String column : newValues.keySet()) {
             addRowToIndex(row, column);
         }
+        //addRowToIndices(row);
     }
     
     private void removeRowFromIndex(Map<String, String> row, String column) {

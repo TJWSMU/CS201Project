@@ -211,7 +211,8 @@ public class Main {
         private static final int NUMBER_OF_QUERIES = 40000;
         private static final String[] QUERY_TYPES = {"INSERT", "SELECT", "UPDATE", "DELETE"};
         private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
-        private static final Random RANDOM = new Random();
+        private static final Random RANDOM = new Random(12345); // Fixed seed
+
 
         private static final boolean TEST_WITH_COMPLEX = true;
 
@@ -255,7 +256,7 @@ public class Main {
             for (int i = 0; i < QUERIES_PER_TYPE; i++) {
                 executeQuery(queryType, i);
                 if (i % 5000 == 0 && i != 0) {
-                   System.out.printf("Processed %d %s queries so far...%n", i, QUERY_TYPES[queryType]);
+                   System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
                 }
             }
         }
@@ -323,16 +324,60 @@ public class Main {
         }
 
         private static void executeUpdateQuerySimple() {
-            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE id = " + RANDOM.nextInt(userCount)
-                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE id = " + RANDOM.nextInt(productCount);
+            // Update a user's age to reflect realistic increments or changes
+            String query = RANDOM.nextBoolean() 
+                ? "UPDATE users SET age =  " + (10 + RANDOM.nextInt(15)) + " WHERE id = " + (10 + RANDOM.nextInt(userCount - 10))
+                : "UPDATE products SET price = " + (100 + RANDOM.nextInt(500)) + " WHERE id = " + (10 + RANDOM.nextInt(productCount - 10));
             dbEngine.executeSQL(query);
         }
-
+        
         private static void executeUpdateQueryComplex() {
-            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
-                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
+            String query;
+        
+            if (RANDOM.nextBoolean()) {
+                // Update the `age` field in the `users` table with alternating `WHERE` conditions
+                int lowerAge = 20 + RANDOM.nextInt(10); // Random age > 20
+                int upperAge = lowerAge + 1 + RANDOM.nextInt(3); // Upper bound is at least 1-3 years higher
+                int ageAdjustment = 2 + RANDOM.nextInt(5); // Adjustment between 2 and 6
+                int randomId = 1 + RANDOM.nextInt(100); // Random ID for targeting specific rows
+                int targetAge = lowerAge + ageAdjustment; // Precomputed value
+        
+                // Alternate `WHERE` conditions for the `age` field
+                switch (RANDOM.nextInt(3)) {
+                    case 0:
+                        query = "UPDATE users SET age = " + targetAge + " WHERE age > " + lowerAge + " AND age < " + upperAge;
+                        break;
+                    case 1:
+                        query = "UPDATE users SET age = " + targetAge + " WHERE id = " + randomId;
+                        break;
+                    default:
+                        query = "UPDATE users SET age = " + targetAge + " WHERE age = " + (lowerAge + RANDOM.nextInt(5));
+                }
+            } else {
+                // Update the `price` field in the `products` table with alternating `WHERE` conditions
+                double lowerPrice = 50 + (RANDOM.nextDouble() * 50); // Random price > 50
+                double upperPrice = lowerPrice + 1 + (RANDOM.nextDouble() * 50); // Upper bound is at least 1-50 higher
+                double priceMultiplier = 1.05 + (RANDOM.nextDouble() * 0.1); // Multiplier between 1.05 and 1.15
+                int randomId = 1 + RANDOM.nextInt(100); // Random ID for targeting specific rows
+                double newPrice = Math.round(lowerPrice * priceMultiplier * 100.0) / 100.0; // Precomputed value rounded to 2 decimals
+        
+                // Alternate `WHERE` conditions for the `price` field
+                switch (RANDOM.nextInt(3)) {
+                    case 0:
+                        query = "UPDATE products SET price = " + newPrice + " WHERE price > " + lowerPrice + " AND price < " + upperPrice;
+                        break;
+                    case 1:
+                        query = "UPDATE products SET price = " + newPrice + " WHERE id = " + randomId;
+                        break;
+                    default:
+                        query = "UPDATE products SET price = " + newPrice + " WHERE price = " + Math.round(lowerPrice * 100.0) / 100.0;
+                }
+            }
+        
             dbEngine.executeSQL(query);
         }
+        
+        
     
         private static void deleteRandomData() {
             String query;

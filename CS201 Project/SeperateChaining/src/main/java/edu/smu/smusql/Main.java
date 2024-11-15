@@ -66,7 +66,7 @@ public class Main {
         testCases.add(new TestCase(
             "Test Case 1: Create table and insert data",
             Arrays.asList(
-                "CREATE TABLE Employees (ID, Name, Age, Department)",
+                "CREATE TABLE Employees (ID INTEGER, Name STRING, Age INTEGER, Department STRING)",
                 "INSERT INTO Employees VALUES (1, 'Alice', 30, 'HR')",
                 "INSERT INTO Employees VALUES (2, 'Bob', 25, 'Engineering')",
                 "INSERT INTO Employees VALUES (3, 'Charlie', 35, 'HR')",
@@ -211,7 +211,8 @@ public class Main {
         private static final int NUMBER_OF_QUERIES = 40000;
         private static final String[] QUERY_TYPES = {"INSERT", "SELECT", "UPDATE", "DELETE"};
         private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
-        private static final Random RANDOM = new Random();
+        private static final Random RANDOM = new Random(12345); // Fixed seed
+
 
         private static final boolean TEST_WITH_COMPLEX = true;
 
@@ -255,7 +256,7 @@ public class Main {
             for (int i = 0; i < QUERIES_PER_TYPE; i++) {
                 executeQuery(queryType, i);
                 if (i % 5000 == 0 && i != 0) {
-                   System.out.printf("Processed %d %s queries so far...%n", i, QUERY_TYPES[queryType]);
+                   System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
                 }
             }
         }
@@ -323,16 +324,41 @@ public class Main {
         }
 
         private static void executeUpdateQuerySimple() {
-            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE id = " + RANDOM.nextInt(userCount)
-                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE id = " + RANDOM.nextInt(productCount);
+            // Update a user's age to reflect realistic increments or changes
+            String query = RANDOM.nextBoolean() 
+                ? "UPDATE users SET age =  " + (10 + RANDOM.nextInt(15)) + " WHERE id = " + (10 + RANDOM.nextInt(userCount - 10))
+                : "UPDATE products SET price = " + (100 + RANDOM.nextInt(500)) + " WHERE id = " + (10 + RANDOM.nextInt(productCount - 10));
             dbEngine.executeSQL(query);
         }
-
+        
         private static void executeUpdateQueryComplex() {
-            String query = RANDOM.nextBoolean() ? "UPDATE users SET age = " + (RANDOM.nextInt(60) + 20) + " WHERE age > " + RANDOM.nextInt(20) + " AND age < " + (RANDOM.nextInt(30) + 20)
-                    : "UPDATE products SET price = " + (RANDOM.nextDouble() * 1000 + 50) + " WHERE price > " + (RANDOM.nextDouble() * 200) + " AND price < " + ((RANDOM.nextDouble() * 500) + 50);
+            String query;
+        
+            if (RANDOM.nextBoolean()) {
+                // Randomize age range
+                int lowerAge = 20 + RANDOM.nextInt(10); // Random age > 20
+                int upperAge = lowerAge + 1 + RANDOM.nextInt(2); // Upper bound is at least 1 years higher
+                int ageAdjustment = 2 + RANDOM.nextInt(5); // Adjustment between 2 and 6
+        
+                // Update user's age with randomized ranges
+                query = RANDOM.nextBoolean() 
+                    ? "UPDATE users SET age = " + (lowerAge+ageAdjustment) + " WHERE age > " + lowerAge + " AND age < " + upperAge
+                    : "UPDATE users SET age = " + (lowerAge-ageAdjustment) + " WHERE age >= " + lowerAge + " AND age <= " + upperAge;
+            } else {
+                // Randomize price range
+                double lowerPrice = 50 + (RANDOM.nextDouble() * 50); // Random price > 50
+                double upperPrice = lowerPrice + 1 + (RANDOM.nextDouble() * 50); // Upper bound is at least 1 higher
+                double priceMultiplier = 1.05 + (RANDOM.nextDouble() * 0.1); // Multiplier between 1.05 and 1.15
+        
+                // Update product prices with randomized ranges
+                query = RANDOM.nextBoolean() 
+                    ? "UPDATE products SET price = " + (lowerPrice*priceMultiplier) + " WHERE price > " + lowerPrice + " AND price < " + upperPrice
+                    : "UPDATE products SET price = " + (lowerPrice/priceMultiplier) + " WHERE price >= " + lowerPrice + " AND price <= " + upperPrice;
+            }
+        
             dbEngine.executeSQL(query);
         }
+        
     
         private static void deleteRandomData() {
             String query;
