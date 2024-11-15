@@ -97,12 +97,18 @@ public class Engine {
         // Get the table
         AVLTree table = tableMap.get(tableName);
         
-        // Check if WHERE clause exists - it must exist for safety
-        if (tokens.length <= 3 || !tokens[3].equalsIgnoreCase("WHERE")) {
-            return "ERROR: DELETE must include WHERE clause";
+        // Check if this is a simple ID-based delete
+        if (tokens.length > 3 && tokens[3].equalsIgnoreCase("WHERE")) {
+            String[] conditions = Arrays.copyOfRange(tokens, 4, tokens.length);
+            if (isSimpleIdQuery(conditions)) {
+                // Use direct AVL tree deletion
+                String id = extractSearchId(conditions);
+                table.delete(id);  // This uses the AVL tree's efficient delete operation
+                return "1 row deleted from " + tableName;
+            }
         }
-    
-        // Find nodes to delete
+
+        // Fall back to full traversal for complex deletes
         List<Map<String, String>> nodesToDelete = new ArrayList<>();
         traverseAndFilter(table.root, nodesToDelete, tokens, 4);
     
@@ -282,20 +288,28 @@ public class Engine {
         // Get the table
         AVLTree table = tableMap.get(tableName);
         List<String> colKeys = table.getColumns();
-    
-        // Initialize result StringBuilder
         StringBuilder result = new StringBuilder();
-        
-        // Add header row (no separator line)
-        result.append(String.join(" ", colKeys)).append("\n");  // Space instead of tab
-    
-        // Check if WHERE clause exists
+        result.append(String.join(" ", colKeys)).append("\n");
+
+        // Add this line before using hasWhere
         boolean hasWhere = tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE");
-        
-        // Store the results
+
+        // Check if this is a simple ID-based query
+        if (hasWhere) {
+            String[] conditions = Arrays.copyOfRange(tokens, 5, tokens.length);
+            if (isSimpleIdQuery(conditions)) {
+                // Use direct AVL tree search instead of traversal
+                String searchId = extractSearchId(conditions);
+                Map<String, String> row = table.search(searchId);
+                if (row != null) {
+                    appendRow(result, row, colKeys);
+                }
+                return result.toString();
+            }
+        }
+
+        // Fall back to full traversal for complex queries
         List<Map<String, String>> matchingRows = new ArrayList<>();
-        
-        // Helper function to traverse tree and apply conditions
         traverseAndFilter(table.root, matchingRows, tokens, hasWhere ? 5 : -1);
     
         // Add matching rows to result
@@ -452,14 +466,25 @@ public class Engine {
             return "ERROR: UPDATE must include WHERE clause";
         }
 
-        // Find nodes to update
-        List<Map<String, String>> nodesToUpdate = new ArrayList<>();
-        traverseAndFilter(table.root, nodesToUpdate, tokens, 7);
-
-        if (nodesToUpdate.isEmpty()) {
-            return "No rows matched the update condition";
+        // Check if this is a simple ID-based update
+        if (tokens.length > 6 && tokens[6].equalsIgnoreCase("WHERE")) {
+            String[] conditions = Arrays.copyOfRange(tokens, 7, tokens.length);
+            if (isSimpleIdQuery(conditions)) {
+                // Use direct AVL tree search
+                String searchId = extractSearchId(conditions);
+                Map<String, String> row = table.search(searchId);
+                if (row != null) {
+                    row.put(updateColumn, updateValue);
+                    return "Table " + tableName + " updated. 1 row affected.";
+                }
+                return "No rows matched the update condition";
+            }
         }
 
+        // Fall back to full traversal for complex updates
+        List<Map<String, String>> nodesToUpdate = new ArrayList<>();
+        traverseAndFilter(table.root, nodesToUpdate, tokens, 7);
+        
         // Update matching nodes
         int updatedCount = 0;
         for (Map<String, String> nodeData : nodesToUpdate) {
@@ -532,6 +557,26 @@ public class Engine {
             result.append(tokens[i]).append(" ");
         }
         return result.toString().trim().replaceAll("\\(", "").replaceAll("\\)", "");
+    }
+
+    private boolean isSimpleIdQuery(String[] conditions) {
+        return conditions.length == 3 && 
+               conditions[0].equalsIgnoreCase("id") && 
+               conditions[1].equals("=");
+    }
+
+    private String extractSearchId(String[] conditions) {
+        return conditions[2].replace("'", "").trim();
+    }
+
+    // Add this method to your Engine class
+    private void appendRow(StringBuilder result, Map<String, String> row, List<String> colKeys) {
+        List<String> rowValues = new ArrayList<>();
+        for (String col : colKeys) {
+            String value = row.get(col).replaceAll("'", "").replaceAll("VALUES", "").trim();
+            rowValues.add(value);
+        }
+        result.append(String.join(" ", rowValues)).append("\n");
     }
 
 }

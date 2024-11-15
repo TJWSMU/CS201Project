@@ -197,6 +197,73 @@ public class AVLTree {
         printTreeRec(node.right, prefix + (isLeft ? "│   " : "    "), false);
     }
 
+    public Map<String, String> search(String id) {
+        long startTime = System.nanoTime();
+        Node result = searchRec(root, id);
+        long endTime = System.nanoTime();
+        double searchTime = (endTime - startTime) / 1_000_000.0; // Convert to milliseconds
+        
+        if (searchTime > 1.0) { // Log if search takes more than 1ms
+            System.out.printf("AVL search took %.3f ms for ID: %s%n", searchTime, id);
+        }
+        
+        return result != null ? result.columnData : null;
+    }
+
+    private Node searchRec(Node node, String searchId) {
+        if (node == null) {
+            return null;
+        }
+
+        // Compare using the first column (id) from columns list
+        String idColumn = columns.get(0);
+        String currentId = node.columnData.get(idColumn);
+        int comparison = searchId.compareTo(currentId);
+
+        if (comparison < 0) {
+            return searchRec(node.left, searchId);
+        } else if (comparison > 0) {
+            return searchRec(node.right, searchId);
+        } else {
+            return node;  // Found the node
+        }
+    }
+
+    public void delete(String id) {
+        root = deleteRec(root, id);
+    }
+
+    private Node deleteRec(Node node, String id) {
+        if (node == null) return null;
+
+        String idColumn = columns.get(0);
+        String currentId = node.columnData.get(idColumn);
+        int comparison = id.compareTo(currentId);
+
+        if (comparison < 0) {
+            node.left = deleteRec(node.left, id);
+        } else if (comparison > 0) {
+            node.right = deleteRec(node.right, id);
+        } else {
+            // Node to delete found
+            if (node.left == null) return node.right;
+            if (node.right == null) return node.left;
+
+            // Node has two children
+            Node successor = findMin(node.right);
+            node.columnData = successor.columnData;
+            node.right = deleteRec(node.right, successor.columnData.get(idColumn));
+        }
+
+        updateHeight(node);
+        return balance(node);
+    }
+
+    private Node findMin(Node node) {
+        while (node.left != null) node = node.left;
+        return node;
+    }
+
     // Main method for testing
     // public static void main(String[] args) {
         
