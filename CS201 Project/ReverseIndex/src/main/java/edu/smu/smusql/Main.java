@@ -10,7 +10,7 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("smuSQL version 0.5.1 2024-09-20");
+        System.out.println("smuSQL version 0.2.1 2024-11-15");
         System.out.println("sample implementation for reference only");
 
         while (true) {
@@ -335,48 +335,29 @@ public class Main {
             String query;
         
             if (RANDOM.nextBoolean()) {
-                // Update the `age` field in the `users` table with alternating `WHERE` conditions
+                // Randomize age range
                 int lowerAge = 20 + RANDOM.nextInt(10); // Random age > 20
-                int upperAge = lowerAge + 1 + RANDOM.nextInt(3); // Upper bound is at least 1-3 years higher
+                int upperAge = lowerAge + 1 + RANDOM.nextInt(2); // Upper bound is at least 1 years higher
                 int ageAdjustment = 2 + RANDOM.nextInt(5); // Adjustment between 2 and 6
-                int randomId = 1 + RANDOM.nextInt(100); // Random ID for targeting specific rows
-                int targetAge = lowerAge + ageAdjustment; // Precomputed value
         
-                // Alternate `WHERE` conditions for the `age` field
-                switch (RANDOM.nextInt(3)) {
-                    case 0:
-                        query = "UPDATE users SET age = " + targetAge + " WHERE age > " + lowerAge + " AND age < " + upperAge;
-                        break;
-                    case 1:
-                        query = "UPDATE users SET age = " + targetAge + " WHERE id = " + randomId;
-                        break;
-                    default:
-                        query = "UPDATE users SET age = " + targetAge + " WHERE age = " + (lowerAge + RANDOM.nextInt(5));
-                }
+                // Update user's age with randomized ranges
+                query = RANDOM.nextBoolean() 
+                    ? "UPDATE users SET age = " + (lowerAge+ageAdjustment) + " WHERE age > " + lowerAge + " AND age < " + upperAge
+                    : "UPDATE users SET age = " + (lowerAge-ageAdjustment) + " WHERE age >= " + lowerAge + " AND age <= " + upperAge;
             } else {
-                // Update the `price` field in the `products` table with alternating `WHERE` conditions
+                // Randomize price range
                 double lowerPrice = 50 + (RANDOM.nextDouble() * 50); // Random price > 50
-                double upperPrice = lowerPrice + 1 + (RANDOM.nextDouble() * 50); // Upper bound is at least 1-50 higher
+                double upperPrice = lowerPrice + 1 + (RANDOM.nextDouble() * 50); // Upper bound is at least 1 higher
                 double priceMultiplier = 1.05 + (RANDOM.nextDouble() * 0.1); // Multiplier between 1.05 and 1.15
-                int randomId = 1 + RANDOM.nextInt(100); // Random ID for targeting specific rows
-                double newPrice = Math.round(lowerPrice * priceMultiplier * 100.0) / 100.0; // Precomputed value rounded to 2 decimals
         
-                // Alternate `WHERE` conditions for the `price` field
-                switch (RANDOM.nextInt(3)) {
-                    case 0:
-                        query = "UPDATE products SET price = " + newPrice + " WHERE price > " + lowerPrice + " AND price < " + upperPrice;
-                        break;
-                    case 1:
-                        query = "UPDATE products SET price = " + newPrice + " WHERE id = " + randomId;
-                        break;
-                    default:
-                        query = "UPDATE products SET price = " + newPrice + " WHERE price = " + Math.round(lowerPrice * 100.0) / 100.0;
-                }
+                // Update product prices with randomized ranges
+                query = RANDOM.nextBoolean() 
+                    ? "UPDATE products SET price = " + (lowerPrice*priceMultiplier) + " WHERE price > " + lowerPrice + " AND price < " + upperPrice
+                    : "UPDATE products SET price = " + (lowerPrice/priceMultiplier) + " WHERE price >= " + lowerPrice + " AND price <= " + upperPrice;
             }
         
             dbEngine.executeSQL(query);
         }
-        
         
     
         private static void deleteRandomData() {

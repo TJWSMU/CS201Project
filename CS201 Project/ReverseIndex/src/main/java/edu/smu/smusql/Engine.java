@@ -281,7 +281,7 @@ public class Engine {
             table.updateRow(row, setExpressions);
             affectedRows++;
         }
-    
+        //System.out.println("Table " + tableName + " updated. " + affectedRows + " rows affected.");
         return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
     

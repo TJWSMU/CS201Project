@@ -10,7 +10,7 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("smuSQL version 0.5.1 2024-09-20");
+        System.out.println("smuSQL version 0.2.1 2024-11-15");
         System.out.println("sample implementation for reference only");
 
         while (true) {
