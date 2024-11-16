@@ -307,7 +307,7 @@ public class Main {
                 long elapsedTime = stopTime - startTime;
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
                 System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                // break;
+                break;
             } else if (query.equalsIgnoreCase("evaluate")) {
                 long startTime = System.nanoTime();
                 DatabaseAutoEvaluator.autoEvaluate();
@@ -315,7 +315,7 @@ public class Main {
                 long elapsedTime = stopTime - startTime;
                 double elapsedTimeInSecond = (double) elapsedTime / 1_000_000_000;
                 System.out.println("Time elapsed: " + elapsedTimeInSecond + " seconds");
-                // break;
+                break;
             }
 
             System.out.println(dbEngine.executeSQL(query));
@@ -537,9 +537,9 @@ public class Main {
         private static void processQueries(int queryType) {
             for (int i = 0; i < QUERIES_PER_TYPE; i++) {
                 executeQuery(queryType, i);
-                if (i % 5000 == 0 && i != 0) {
-                   System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
-                }
+                // if (i % 5000 == 0 && i != 0) {
+                //    System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
+                // }
             }
         }
     
