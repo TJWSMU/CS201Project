@@ -117,7 +117,7 @@ public class DynamicArray<E> {
 
     // Private helper method to resize the internal array
     private void resize() {
-        capacity *= 2;
+        capacity *= 3;
         data = Arrays.copyOf(data, capacity);
     }
 

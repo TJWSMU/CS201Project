@@ -8,6 +8,7 @@ public class Engine {
 
     public String executeSQL(String query) {
         String[] tokens = query.trim().split("\\s+");
+
         String command = tokens[0].toUpperCase();
 
         switch (command) {
@@ -41,6 +42,12 @@ public class Engine {
         String valueList = queryBetweenParentheses(tokens, 4); // Get values list between parentheses
         List<String> values = Arrays.asList(valueList.split(","));
 
+        List<String> cleanedValues = new ArrayList<>();
+
+        for (String value : values) {
+            cleanedValues.add(removeSingleQuotes(value.trim()));
+        }
+
         // Trim each value to avoid spaces around them
         values.replaceAll(String::trim);
 
@@ -52,7 +59,7 @@ public class Engine {
 
         Map<String, String> row = new HashMap<>();
         for (int i = 0; i < columns.size(); i++) {
-            row.put(columns.get(i), values.get(i));
+            row.put(columns.get(i), cleanedValues.get(i));
         }
 
         tbl.addRow(row); // Add the new row to the table
@@ -87,7 +94,7 @@ public class Engine {
                     // Add condition with operator (column, operator, value)
                     String column = tokens[i - 1];
                     String operator = tokens[i];
-                    String value = tokens[i + 1];
+                    String value = removeSingleQuotes(tokens[i + 1]);
                     whereClauseConditions.add(new String[] {null, column, operator, value});
                     i += 1; // Skip the value since it has been processed
                 }
@@ -145,7 +152,7 @@ public class Engine {
                     // Add condition with operator (column, operator, value)
                     String column = tokens[i - 1];
                     String operator = tokens[i];
-                    String value = tokens[i + 1];
+                    String value = removeSingleQuotes(tokens[i + 1]);
                     whereClauseConditions.add(new String[] {null, column, operator, value});
                     i += 1; // Skip the value since it has been processed
                 }
@@ -183,7 +190,7 @@ public class Engine {
         }
 
         String setColumn = tokens[3]; // column to be updated
-        String newValue = tokens[5]; // new value for above column
+        String newValue = removeSingleQuotes(tokens[5]); // new value for above column
 
         List<String> columns = tbl.getColumns();
 
@@ -202,7 +209,7 @@ public class Engine {
                     // Add condition with operator (column, operator, value)
                     String column = tokens[i - 1];
                     String operator = tokens[i];
-                    String value = tokens[i + 1];
+                    String value = removeSingleQuotes(tokens[i + 1]);
                     whereClauseConditions.add(new String[] {null, column, operator, value});
                     i += 1; // Skip the value since it has been processed
                 }
@@ -338,6 +345,13 @@ public class Engine {
         }
 
         return overallMatch;
+    }
+
+    private String removeSingleQuotes(String value) {
+        if (value.startsWith("'") && value.endsWith("'")) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
     }
 
 }
