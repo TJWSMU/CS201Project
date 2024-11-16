@@ -212,7 +212,6 @@ public class Engine {
     }
 
     public String update(String[] tokens) {
-        //TODO
         //Check for correct syntax
         if (!tokens[2].toUpperCase().equals("SET") ||
             !tokens[4].equals("=") || 
@@ -233,6 +232,8 @@ public class Engine {
         int index = table.getColumns().getOrDefault(updateColumn, -1);
         if (index == -1) {
             return "ERROR: Column does not exist";
+        } else if (index == 0) {
+            return "ERROR: Cannot update primary key";
         }
         //Get the new value
         String newValue = tokens[5];
