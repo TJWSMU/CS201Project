@@ -38,6 +38,15 @@ public class BinarySearchTree {
         root = insertRec(root, data);
     }
 
+    /**
+     * Inserts a new node with the given data into the binary search tree.
+     * If the tree is empty, a new node is created as the root.
+     * If a node with the same key already exists, the new node is inserted to the left.
+     *
+     * @param root The root of the binary search tree.
+     * @param data The data to be inserted, where the first element acts as the primary key.
+     * @return The root of the binary search tree after insertion.
+     */
     private Node insertRec(Node root, String[] data) {
         if (root == null) {
             root = new Node(data);
@@ -65,6 +74,22 @@ public class BinarySearchTree {
         return count[0];
     }
 
+    /**
+     * Recursively updates nodes in the binary search tree based on specified conditions.
+     *
+     * @param root The root node of the binary search tree.
+     * @param index The index of the data array in the node to be updated.
+     * @param newValue The new value to be set at the specified index.
+     * @param index1 The index of the data array in the node for the first condition.
+     * @param value1 The value to compare against for the first condition.
+     * @param operator1 The operator to use for the first condition (e.g., "=", "<", ">", "<=", ">=").
+     * @param logic The logical operator to combine the two conditions ("AND" or "OR"). If null, only the first condition is used.
+     * @param index2 The index of the data array in the node for the second condition.
+     * @param value2 The value to compare against for the second condition.
+     * @param operator2 The operator to use for the second condition (e.g., "=", "<", ">", "<=", ">=").
+     * @param count An array of size 1 to keep track of the number of nodes updated.
+     * @return The root node of the binary search tree after updates.
+     */
     private Node updateRec(Node root, int index, String newValue, int index1, String value1, String operator1, String logic, int index2, String value2, String operator2, int[] count) {
         if (root == null) {
             return root;
@@ -92,6 +117,20 @@ public class BinarySearchTree {
         return count[0];
     }
     
+    /**
+     * Deletes nodes from the binary search tree based on the specified conditions.
+     *
+     * @param root The root node of the binary search tree.
+     * @param index1 The index of the first condition to check in the node's data.
+     * @param value1 The value to compare against for the first condition.
+     * @param operator1 The operator to use for the first condition (e.g., "=", "<", ">", "<=", ">=").
+     * @param logic The logical operator to combine the first and second conditions ("AND" or "OR").
+     * @param index2 The index of the second condition to check in the node's data.
+     * @param value2 The value to compare against for the second condition.
+     * @param operator2 The operator to use for the second condition (e.g., "=", "<", ">", "<=", ">=").
+     * @param count An array to keep track of the number of deleted nodes.
+     * @return The new root of the binary search tree after deletion.
+     */
     private Node deleteRec(Node root, int index1, String value1, String operator1, String logic, int index2, String value2, String operator2, int[] count) {
         if (root == null) {
             return root;
@@ -132,35 +171,9 @@ public class BinarySearchTree {
         return minv;
     }
 
-    public boolean search(String key) {
-        return searchRec(root, key);
-    }
-
-    private boolean searchRec(Node root, String key) {
-        if (root == null)
-            return false;
-
-        if (root.data[0].equals(key))
-            return true;
-
-        if (root.data[0].compareTo(key) > 0)
-            return searchRec(root.left, key);
-
-        return searchRec(root.right, key);
-    }
-
-    public void inorder() {
-        inorderRec(root);
-    }
-
-    private void inorderRec(Node root) {
-        if (root != null) {
-            inorderRec(root.left);
-            System.out.println(root.data[0]);
-            inorderRec(root.right);
-        }
-    }
-
+    /*
+     * Used for the select statement where column name = value
+     */
     public String searchAndPrintEquals(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -168,6 +181,15 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree for nodes where the data at the specified index
+     * equals the given value, and appends the matching nodes' data to the result.
+     *
+     * @param node   The current node in the binary search tree.
+     * @param index  The index in the node's data array to compare with the value.
+     * @param value  The value to compare against the node's data at the specified index.
+     * @param result The StringBuilder to append the matching nodes' data to.
+     */
     private void searchAndPrintEqualsRec(Node node, int index, String value, StringBuilder result) {
         if (node != null) {
             searchAndPrintEqualsRec(node.left, index, value, result);
@@ -178,6 +200,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name < value
+     */
     public String searchAndPrintLessThan(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -185,6 +210,15 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree and appends to the result all nodes
+     * whose data at the specified index is less than the given value.
+     *
+     * @param node   the current node in the binary search tree
+     * @param index  the index of the data array to compare
+     * @param value  the value to compare against
+     * @param result the StringBuilder to append the results to
+     */
     private void searchAndPrintLessThanRec(Node node, int index, String value, StringBuilder result) {
         if (node != null) {
             searchAndPrintLessThanRec(node.left, index, value, result);
@@ -195,6 +229,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name <= value
+     */
     public String searchAndPrintLessThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -202,6 +239,15 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree for nodes with data less than or equal to the specified value
+     * at the given index and appends the matching nodes' data to the result.
+     *
+     * @param node   The current node in the binary search tree.
+     * @param index  The index of the data array to compare the value against.
+     * @param value  The value to compare the node's data against.
+     * @param result The StringBuilder object to append the matching nodes' data.
+     */
     private void searchAndPrintLessThanOrEqualRec(Node node, int index, String value, StringBuilder result) {
         if (node != null) {
             searchAndPrintLessThanOrEqualRec(node.left, index, value, result);
@@ -212,6 +258,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name > value
+     */
     public String searchAndPrintMoreThan(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -219,6 +268,15 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree for nodes where the value at the specified index
+     * is greater than the given value, and appends the data of those nodes to the result.
+     *
+     * @param node   The current node in the binary search tree.
+     * @param index  The index of the value in the node's data array to compare.
+     * @param value  The value to compare against.
+     * @param result The StringBuilder to append the results to.
+     */
     private void searchAndPrintMoreThanRec(Node node, int index, String value, StringBuilder result) {
         if (node != null) {
             searchAndPrintMoreThanRec(node.left, index, value, result);
@@ -229,6 +287,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name >= value
+     */
     public String searchAndPrintMoreThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -236,6 +297,16 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree for nodes with data at the specified index
+     * that is greater than or equal to the given value, and appends the matching nodes' data
+     * to the result StringBuilder.
+     *
+     * @param node  the current node in the binary search tree
+     * @param index the index of the data array to compare
+     * @param value the value to compare against
+     * @param result the StringBuilder to append the matching nodes' data
+     */
     private void searchAndPrintMoreThanOrEqualRec(Node node, int index, String value, StringBuilder result) {
         if (node != null) {
             searchAndPrintMoreThanOrEqualRec(node.left, index, value, result);
@@ -246,6 +317,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name , value1 AND column name , value2
+     */
     public String searchAndPrintAnd(int index1, String operator1, String value1, int index2, String operator2, String value2) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -253,6 +327,18 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree and appends nodes that match the given conditions to the result.
+     *
+     * @param node the current node in the binary search tree
+     * @param index1 the index of the first condition to check in the node's data
+     * @param operator1 the operator for the first condition (e.g., "=", "<", ">", "<=", ">=")
+     * @param value1 the value to compare against for the first condition
+     * @param index2 the index of the second condition to check in the node's data
+     * @param operator2 the operator for the second condition (e.g., "=", "<", ">", "<=", ">=")
+     * @param value2 the value to compare against for the second condition
+     * @param result the StringBuilder to append the matching node's data to
+     */
     private void searchAndPrintAndRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, StringBuilder result) {
         if (node != null) {
             searchAndPrintAndRec(node.left, index1, operator1, value1, index2, operator2, value2, result);
@@ -263,6 +349,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Used for the select statement where column name , value1 OR column name , value2
+     */
     public String searchAndPrintOr(int index1, String operator1, String value1, int index2, String operator2, String value2) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
@@ -270,6 +359,18 @@ public class BinarySearchTree {
         return result.toString();
     }
 
+    /**
+     * Recursively searches the binary search tree and appends nodes that match either of the given conditions to the result.
+     *
+     * @param node the current node in the binary search tree
+     * @param index1 the index of the first condition to check in the node's data
+     * @param operator1 the operator for the first condition (e.g., "=", "<", ">", "<=", ">=")
+     * @param value1 the value to compare against for the first condition
+     * @param index2 the index of the second condition to check in the node's data
+     * @param operator2 the operator for the second condition (e.g., "=", "<", ">", "<=", ">=")
+     * @param value2 the value to compare against for the second condition
+     * @param result the StringBuilder to append the matching node's data to
+     */
     private void searchAndPrintOrRec(Node node, int index1, String operator1, String value1, int index2, String operator2, String value2, StringBuilder result) {
         if (node != null) {
             searchAndPrintOrRec(node.left, index1, operator1, value1, index2, operator2, value2, result);
@@ -280,6 +381,9 @@ public class BinarySearchTree {
         }
     }
 
+    /*
+     * Helper method to check if the data matches the condition.
+     */
     private boolean matchesCondition(String data, String value, String operator) {
         switch (operator) {
             case "=":
