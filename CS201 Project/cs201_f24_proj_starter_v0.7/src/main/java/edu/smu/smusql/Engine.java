@@ -282,7 +282,7 @@ public class Engine {
         }
 
         
-        return "Rows updated in " + tableName + ". " + rowsUpdated + " rows affected.";
+        return "Table " + tableName + " updated. " + rowsUpdated + " rows affected.";
     }
     public String create(String[] tokens) {
 

@@ -163,6 +163,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintEquals(int index, String value) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintEqualsRec(root, index, value, result);
         return result.toString();
     }
@@ -179,6 +180,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintLessThan(int index, String value) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintLessThanRec(root, index, value, result);
         return result.toString();
     }
@@ -195,6 +197,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintLessThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintLessThanOrEqualRec(root, index, value, result);
         return result.toString();
     }
@@ -211,6 +214,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintMoreThan(int index, String value) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintMoreThanRec(root, index, value, result);
         return result.toString();
     }
@@ -227,6 +231,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintMoreThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintMoreThanOrEqualRec(root, index, value, result);
         return result.toString();
     }
@@ -243,6 +248,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintAnd(int index1, String operator1, String value1, int index2, String operator2, String value2) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintAndRec(root, index1, operator1, value1, index2, operator2, value2, result);
         return result.toString();
     }
@@ -259,6 +265,7 @@ public class BinarySearchTree {
 
     public String searchAndPrintOr(int index1, String operator1, String value1, int index2, String operator2, String value2) {
         StringBuilder result = new StringBuilder();
+        result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintOrRec(root, index1, operator1, value1, index2, operator2, value2, result);
         return result.toString();
     }
