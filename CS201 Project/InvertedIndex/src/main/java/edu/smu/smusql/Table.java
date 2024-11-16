@@ -42,7 +42,6 @@ public class Table {
     }
 
     public Map<String, String> getColumnTypes() {
-        
         return columnTypes;
     }
     public String getColumnType(String column) {

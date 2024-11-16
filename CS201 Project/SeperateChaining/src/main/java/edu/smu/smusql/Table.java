@@ -9,7 +9,6 @@ public class Table {
     private ChainHashMap<String, HashMap<String, String>> rows; // Keyed by the first column value
     private List<String> columns;
     private String name;
-    //private LinkedHashMap<String, ChainHashMap<String, String>> rows;
 
     public Table(String name, List<String> columns) {
         this.name = name;

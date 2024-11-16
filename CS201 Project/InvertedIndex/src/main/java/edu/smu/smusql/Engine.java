@@ -193,13 +193,13 @@ public class Engine {
         }
 
         StringBuilder result = new StringBuilder();
-        result.append(String.join("\t", columns)).append("\n"); // Print column headers
+        result.append(String.join("\t", columns)).append("\n"); 
 
         List<String[]> whereClauseConditions = new ArrayList<>();
 
         // Parse WHERE clause if present
         if (tokens.length > 4 && tokens[4].equalsIgnoreCase("WHERE")) {
-            whereClauseConditions = parseWhereClause(tokens, 5); // Start parsing after "WHERE"
+            whereClauseConditions = parseWhereClause(tokens, 5); 
         }
 
         // Evaluate WHERE conditions
@@ -281,7 +281,7 @@ public class Engine {
             table.updateRow(row, setExpressions);
             affectedRows++;
         }
-        //System.out.println("Table " + tableName + " updated. " + affectedRows + " rows affected.");
+       
         return "Table " + tableName + " updated. " + affectedRows + " rows affected.";
     }
     

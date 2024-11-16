@@ -208,13 +208,13 @@ public class Main {
     
     public class DatabaseAutoEvaluator {
 
-        private static final int NUMBER_OF_QUERIES = 40000;
+        private static final int NUMBER_OF_QUERIES = 400000;
         private static final String[] QUERY_TYPES = {"INSERT", "SELECT", "UPDATE", "DELETE"};
         private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
         private static final Random RANDOM = new Random(12345); // Fixed seed
 
 
-        private static final boolean TEST_WITH_COMPLEX = true;
+        private static final boolean TEST_WITH_COMPLEX = false;
 
         // Counters to track the number of rows in each table
         private static int userCount = 50;
@@ -227,7 +227,7 @@ public class Main {
     
             for (int queryType = 0; queryType < QUERY_TYPES.length; queryType++) {
                 long startTime = System.nanoTime();
-    
+                
                 processQueries(queryType);
     
                 double elapsedTimeInSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0;
@@ -256,7 +256,7 @@ public class Main {
             for (int i = 0; i < QUERIES_PER_TYPE; i++) {
                 executeQuery(queryType, i);
                 if (i % 5000 == 0 && i != 0) {
-                   System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
+                   //System.out.printf("Processed %d %s queries...%n", i, QUERY_TYPES[queryType]);
                 }
             }
         }

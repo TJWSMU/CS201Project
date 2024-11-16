@@ -208,7 +208,7 @@ public class Main {
     
     public class DatabaseAutoEvaluator {
 
-        private static final int NUMBER_OF_QUERIES = 40000;
+        private static final int NUMBER_OF_QUERIES = 320000;
         private static final String[] QUERY_TYPES = {"INSERT", "SELECT", "UPDATE", "DELETE"};
         private static final int QUERIES_PER_TYPE = NUMBER_OF_QUERIES / QUERY_TYPES.length;
         private static final Random RANDOM = new Random(12345); // Fixed seed
