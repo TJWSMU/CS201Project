@@ -19,8 +19,8 @@ public class BinarySearchTree {
     private Node root;
     private Map<String, Integer> columns = new HashMap<>(); //column name as key, index in array as value
     private String[] columnNames;
-    private String leftMost;
-    private String rightMost;
+    private String leftMost; //Stores the leftmost primary key
+    private String rightMost; //Stores the rightmost primary key 
 
     public BinarySearchTree(String[] columnNames) {
         root = null;
@@ -50,18 +50,40 @@ public class BinarySearchTree {
     private Node insertRec(Node root, String[] data) {
         if (root == null) {
             root = new Node(data);
+            // Update leftmost and rightmost when inserting the first node
+            if (this.root == null) {
+                leftMost = data[0];
+                rightMost = data[0];
+            } else {
+                if (data[0].compareTo(leftMost) < 0) {
+                    leftMost = data[0];
+                }
+                if (data[0].compareTo(rightMost) > 0) {
+                    rightMost = data[0];
+                }
+            }
             return root;
         }
 
-        //Insert the row depending on the value of the first column 
-        //(first column acts as primary key)
-        //allow for duplicate keys, insert to left if duplicate
-        if (data[0].compareTo(root.data[0]) < 0)
+        // Insert the row depending on the value of the first column 
+        // (first column acts as primary key)
+        // allow for duplicate keys, insert to left if duplicate
+        if (data[0].compareTo(root.data[0]) < 0) {
             root.left = insertRec(root.left, data);
-        else if (data[0].compareTo(root.data[0]) > 0)
+            if (data[0].compareTo(leftMost) < 0) {
+                leftMost = data[0];
+            }
+        } else if (data[0].compareTo(root.data[0]) > 0) {
             root.right = insertRec(root.right, data);
-        else
+            if (data[0].compareTo(rightMost) > 0) {
+                rightMost = data[0];
+            }
+        } else {
             root.left = insertRec(root.left, data);
+            if (data[0].compareTo(leftMost) < 0) {
+                leftMost = data[0];
+            }
+        }
 
         return root;
     }
@@ -177,6 +199,10 @@ public class BinarySearchTree {
     public String searchAndPrintEquals(int index, String value) {
         StringBuilder result = new StringBuilder();
         result.append(String.join("\t", columnNames)).append("\n");
+        // If the value is outside the range of the primary key, row cannot be found.
+        if (index == 0 && (value.compareTo(leftMost) < 0 || value.compareTo(rightMost) > 0)) {
+            return result.toString();
+        }
         searchAndPrintEqualsRec(root, index, value, result);
         return result.toString();
     }
@@ -205,6 +231,10 @@ public class BinarySearchTree {
      */
     public String searchAndPrintLessThan(int index, String value) {
         StringBuilder result = new StringBuilder();
+        //Check if result is less than the leftmost, if so row cannot be found
+        if (index == 0 && value.compareTo(leftMost) < 0) {
+            return result.toString();
+        }
         result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintLessThanRec(root, index, value, result);
         return result.toString();
@@ -234,6 +264,10 @@ public class BinarySearchTree {
      */
     public String searchAndPrintLessThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
+        //Check if result is less than the leftmost, if so row cannot be found
+        if (index == 0 && value.compareTo(leftMost) < 0) {
+            return result.toString();
+        }
         result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintLessThanOrEqualRec(root, index, value, result);
         return result.toString();
@@ -263,6 +297,10 @@ public class BinarySearchTree {
      */
     public String searchAndPrintMoreThan(int index, String value) {
         StringBuilder result = new StringBuilder();
+        //Check if result is greater than the rightmost, if so row cannot be found
+        if (index == 0 && value.compareTo(rightMost) > 0) {
+            return result.toString();
+        }
         result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintMoreThanRec(root, index, value, result);
         return result.toString();
@@ -292,6 +330,10 @@ public class BinarySearchTree {
      */
     public String searchAndPrintMoreThanOrEqual(int index, String value) {
         StringBuilder result = new StringBuilder();
+        //Check if result is greater than the rightmost, if so row cannot be found
+        if (index == 0 && value.compareTo(rightMost) > 0) {
+            return result.toString();
+        }
         result.append(String.join("\t", columnNames)).append("\n");
         searchAndPrintMoreThanOrEqualRec(root, index, value, result);
         return result.toString();
